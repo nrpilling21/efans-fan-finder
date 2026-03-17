@@ -1,3 +1,161 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Load product catalogue
+let products = [];
+try {
+  products = JSON.parse(readFileSync(join(process.cwd(), 'data', 'products.json'), 'utf8'));
+} catch (e) {
+  console.warn('Could not load product catalogue:', e.message);
+}
+
+// === Recommendation Logic (inline to avoid module issues on Vercel) ===
+
+function parseSizeMm(str) {
+  if (!str) return null;
+  str = String(str);
+  const mmMatch = str.match(/(\d{2,4})\s*mm/i);
+  if (mmMatch) return parseInt(mmMatch[1]);
+  const inchMap = { '4': 100, '5': 125, '6': 150, '7': 180, '8': 200, '9': 225, '10': 250, '12': 315, '14': 355, '16': 400, '18': 450, '20': 500 };
+  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|â³|'')/i);
+  if (inchMatch && inchMap[inchMatch[1]]) return inchMap[inchMatch[1]];
+  return null;
+}
+
+function parseAirflow(str) {
+  if (!str) return null;
+  str = String(str);
+  const m3hMatch = str.match(/([\d,.]+)\s*m[Â³3]\/?h/i);
+  if (m3hMatch) return parseFloat(m3hMatch[1].replace(',', ''));
+  const lsMatch = str.match(/([\d,.]+)\s*l\/?s/i);
+  if (lsMatch) return Math.round(parseFloat(lsMatch[1].replace(',', '')) * 3.6);
+  return null;
+}
+
+function parseMotorType(fields) {
+  const searchStr = [fields.notes, fields.model, fields.manufacturer]
+    .filter(Boolean).join(' ').toUpperCase();
+  if (/\bEC\b|ECOWATT|LO.?CARBON|LOW ENERGY/.test(searchStr)) return 'EC';
+  return 'AC';
+}
+
+function inferCategory(fields) {
+  const s = [fields.manufacturer, fields.model, fields.notes, fields.part_number]
+    .filter(Boolean).join(' ').toLowerCase();
+  if (/inline|duct fan|in-line|centrifugal duct|\b(vl|hit|rvk|vent-?\d|td-|acp|sdx)\b/i.test(s)) return 'inline-duct-fan';
+  if (/plate axial|plate fan|\b(hpa|hcb[bt]|hxbr|aw \d)\b/i.test(s)) return 'plate-axial-fan';
+  if (/bathroom|extractor|silent|\b(bf silent|solo|silent\d|px\d|gx\d|cv[23]|centra|revive|ecoair)\b/i.test(s)) return 'bathroom-extractor';
+  if (/mixed flow|\b(td-|acm)\b/i.test(s)) return 'mixed-flow-fan';
+  if (/axial|wall fan|window fan|\b(vario)\b/i.test(s)) return 'axial-fan';
+  if (/roof/.test(s)) return 'roof-fan';
+  return null;
+}
+
+function extractSizeFromModel(model) {
+  if (!model) return null;
+  const patterns = [
+    /(?:VL|K|HIT|RVK|ACP|SDX|BF)[\s-]?(\d{3})/i,
+    /HPA(\d{3})/i,
+    /AW[\s-](\d{3})/i,
+    /TD-\d+\/(\d{3})/i,
+    /VENT-(\d{3})/i,
+    /(?:HXBR|HCBB|HCBT)\/\d-(\d{3})/i,
+    /(?:ACM|SILENT|PX|GX|FLUX)[\s-]?(\d{3})/i,
+    /\b(100|125|150|160|180|200|225|250|300|315|350|355|400|450|500|560|630)\b/
+  ];
+  for (const pat of patterns) {
+    const m = model.match(pat);
+    if (m) return parseInt(m[1]);
+  }
+  return null;
+}
+
+function getRecommendations(fields) {
+  if (!products.length) return { match_type: 'none', recommendations: [], message: "Product catalogue not loaded." };
+
+  const criteria = {
+    size_mm: parseSizeMm(fields.model) || parseSizeMm(fields.airflow) || parseSizeMm(fields.notes) ||
+             extractSizeFromModel(fields.model) || extractSizeFromModel(fields.part_number),
+    airflow_m3h: parseAirflow(fields.airflow),
+    motor_type: parseMotorType(fields),
+    category: inferCategory(fields),
+    brand: fields.manufacturer || null
+  };
+
+  // Exact model/SKU match
+  const model = (fields.model || '').toLowerCase().replace(/[\s-]/g, '');
+  const partNum = (fields.part_number || '').toLowerCase().replace(/[\s-]/g, '');
+
+  if (model || partNum) {
+    const exactMatches = products.filter(p => {
+      const pSku = p.sku.toLowerCase().replace(/[\s-]/g, '');
+      const pName = p.name.toLowerCase().replace(/[\s-]/g, '');
+      return (model && (pSku.includes(model) || pName.includes(model) || model.includes(pSku))) ||
+             (partNum && (pSku.includes(partNum) || pName.includes(partNum) || partNum.includes(pSku)));
+    }).filter(p => p.in_stock).slice(0, 3);
+
+    if (exactMatches.length > 0) {
+      return {
+        match_type: 'exact',
+        criteria,
+        recommendations: exactMatches.map(p => ({
+          ...p,
+          match_type: 'exact',
+          match_reason: 'Direct model/SKU match â likely the same fan or its current equivalent'
+        }))
+      };
+    }
+  }
+
+  // Score-based matching
+  if (criteria.size_mm) {
+    const scored = products.filter(p => p.in_stock).map(p => {
+      let score = 0;
+      const reasons = [];
+
+      if (p.size_mm === criteria.size_mm) { score += 50; reasons.push('Exact size match'); }
+      else if (Math.abs(p.size_mm - criteria.size_mm) <= 25) { score += 20; reasons.push('Close size match'); }
+
+      if (criteria.airflow_m3h && p.airflow_m3h) {
+        const ratio = p.airflow_m3h / criteria.airflow_m3h;
+        if (ratio >= 0.8 && ratio <= 1.2) { score += 30; reasons.push('Similar airflow'); }
+        else if (ratio >= 0.6 && ratio <= 1.4) { score += 15; reasons.push('Comparable airflow'); }
+      }
+
+      if (criteria.motor_type && p.motor_type === criteria.motor_type) { score += 20; reasons.push('Same motor type'); }
+      if (criteria.category && p.category === criteria.category) { score += 15; reasons.push('Same fan type'); }
+      if (criteria.brand && p.brand && p.brand.toLowerCase() === criteria.brand.toLowerCase()) { score += 10; reasons.push('Same brand'); }
+      if (p.in_stock) { score += 5; }
+
+      return { ...p, match_score: score, match_reasons: reasons };
+    })
+    .filter(p => p.match_score >= 50)
+    .sort((a, b) => b.match_score - a.match_score)
+    .slice(0, 5);
+
+    if (scored.length > 0) {
+      return {
+        match_type: 'similar',
+        criteria,
+        recommendations: scored.map(p => ({
+          ...p,
+          match_type: 'similar',
+          match_reason: p.match_reasons.join(' Â· ')
+        }))
+      };
+    }
+  }
+
+  return {
+    match_type: 'none',
+    criteria,
+    recommendations: [],
+    message: "We couldn't find an automatic match, but don't worry â our team can help. Submit your enquiry and we'll find the right replacement."
+  };
+}
+
+// === Main Handler ===
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -13,7 +171,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: 'API key not configured' });
   }
 
-  // Strip the data:image/...;base64, prefix if present
   const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
   const mediaType = image.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg';
 
@@ -55,11 +212,11 @@ Return a JSON object with these fields (use null for any field you can't determi
   "frequency": "e.g. 50Hz",
   "power": "e.g. 150W",
   "current": "e.g. 0.65A",
-  "airflow": "e.g. 500 m\u00b3/h or 139 l/s",
+  "airflow": "e.g. 500 mÂ³/h or 139 l/s",
   "speed": "e.g. 1400 RPM",
   "ip_rating": "e.g. IP44",
   "date": "Manufacturing date if visible",
-  "notes": "Any other relevant info you can see — motor type (EC/AC), class, weight, country of origin, certification marks, etc."
+  "notes": "Any other relevant info you can see â motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
 }
 
 If the image is NOT a fan ID plate (e.g. it's a photo of the fan housing, a random object, or unclear), still try to identify the fan type and manufacturer if possible, and note this in the "notes" field.
@@ -75,12 +232,10 @@ Return ONLY the JSON object, no other text.`
 
     if (data.content && data.content[0] && data.content[0].text) {
       let text = data.content[0].text.trim();
-      // Strip markdown code fences if present
-      text = text.replace(/^\`\`\`json\s*/, '').replace(/\s*\`\`\`$/, '');
+      text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
 
       try {
         const fields = JSON.parse(text);
-        // Remove null fields
         const cleaned = {};
         for (const [k, v] of Object.entries(fields)) {
           if (v !== null && v !== '' && v !== 'null' && v !== 'N/A') {
@@ -89,9 +244,20 @@ Return ONLY the JSON object, no other text.`
         }
 
         if (Object.keys(cleaned).length > 0) {
-          return res.status(200).json({ success: true, fields: cleaned });
+          // Get product recommendations based on identified fields
+          const recommendations = getRecommendations(cleaned);
+
+          return res.status(200).json({
+            success: true,
+            fields: cleaned,
+            recommendations: recommendations
+          });
         } else {
-          return res.status(200).json({ success: false, error: 'Could not extract any information' });
+          return res.status(200).json({
+            success: false,
+            error: 'Could not extract any information',
+            recommendations: { match_type: 'none', recommendations: [] }
+          });
         }
       } catch (parseErr) {
         return res.status(200).json({ success: false, error: 'Could not parse AI response' });
