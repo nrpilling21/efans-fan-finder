@@ -197,6 +197,35 @@
         </div>
       </div>
 
+      <!-- Product Recommendations -->
+      <div id="recommendations" class="hidden fade-in mb-6">
+        <div id="recsFound" class="hidden">
+          <div class="bg-white border-2 border-efans-accent rounded-xl p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <svg class="w-6 h-6 text-efans-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <h3 class="font-bold text-lg text-efans-dark" id="recsTitle">Recommended Replacements</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4" id="recsSubtitle">Based on the ID plate reading, here are replacement fans we stock:</p>
+            <div id="recsContent" class="space-y-3">
+              <!-- Product cards populate here -->
+            </div>
+            <p class="text-xs text-gray-500 mt-4 border-t border-gray-100 pt-3">Prices shown exc. VAT. Need a different spec? Fill in the form below for a custom quote.</p>
+          </div>
+        </div>
+        <div id="recsNone" class="hidden">
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <div>
+                <p class="font-semibold text-blue-800 mb-1">We'll find your replacement</p>
+                <p class="text-sm text-blue-700">We couldn't match this automatically to our catalogue â but that's fine. Fill in the form below and our team will find the right replacement fan for you. We've got 40+ years of experience matching fans.</p>
+                <p class="text-sm text-blue-600 mt-2">Or call us now on <a href="tel:01204263014" class="font-semibold underline">01204 263014</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- AI Loading -->
       <div id="aiLoading" class="hidden mb-6">
         <div class="bg-white border border-gray-200 rounded-xl p-6 text-center">
@@ -481,6 +510,12 @@
     const aiResultContent = document.getElementById('aiResultContent');
     const aiLoading = document.getElementById('aiLoading');
     const aiError = document.getElementById('aiError');
+    const recommendations = document.getElementById('recommendations');
+    const recsFound = document.getElementById('recsFound');
+    const recsNone = document.getElementById('recsNone');
+    const recsContent = document.getElementById('recsContent');
+    const recsTitle = document.getElementById('recsTitle');
+    const recsSubtitle = document.getElementById('recsSubtitle');
     const enquiryForm = document.getElementById('enquiryForm');
     const submitBtn = document.getElementById('submitBtn');
     const successMessage = document.getElementById('successMessage');
@@ -549,6 +584,7 @@
       aiLoading.classList.remove('hidden');
       aiResult.classList.add('hidden');
       aiError.classList.add('hidden');
+      recommendations.classList.add('hidden');
 
       try {
         const response = await fetch('/api/identify', {
@@ -562,8 +598,13 @@
 
         if (data.success && data.fields) {
           showAiResult(data.fields);
+          if (data.recommendations) {
+            showRecommendations(data.recommendations);
+          }
         } else {
           aiError.classList.remove('hidden');
+          // Still show "contact us" recommendation
+          showRecommendations({ match_type: 'none', recommendations: [] });
         }
       } catch (err) {
         aiLoading.classList.add('hidden');
@@ -605,6 +646,65 @@
       document.getElementById('aiSpecs').value = JSON.stringify(fields);
     }
 
+    function showRecommendations(recData) {
+      recommendations.classList.remove('hidden');
+      recsFound.classList.add('hidden');
+      recsNone.classList.add('hidden');
+      recsContent.innerHTML = '';
+
+      if (recData.match_type === 'none' || !recData.recommendations || recData.recommendations.length === 0) {
+        recsNone.classList.remove('hidden');
+        return;
+      }
+
+      recsFound.classList.remove('hidden');
+
+      if (recData.match_type === 'exact') {
+        recsTitle.textContent = 'We Stock This Fan';
+        recsSubtitle.textContent = 'We found a direct match in our catalogue:';
+      } else {
+        recsTitle.textContent = 'Recommended Replacements';
+        recsSubtitle.textContent = 'Based on size, airflow, and motor type â here are compatible replacements:';
+      }
+
+      recData.recommendations.forEach(product => {
+        const card = document.createElement('a');
+        card.href = product.url;
+        card.target = '_blank';
+        card.rel = 'noopener';
+        card.className = 'block bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-4 transition-colors';
+
+        const priceStr = product.price_gbp ? 'Â£' + product.price_gbp.toFixed(2) : '';
+        const airflowStr = product.airflow_m3h ? product.airflow_m3h + ' mÂ³/h' : '';
+        const sizeStr = product.size_mm ? product.size_mm + 'mm' : '';
+        const motorStr = product.motor_type || '';
+        const specs = [sizeStr, motorStr, airflowStr].filter(Boolean).join(' Â· ');
+
+        const matchBadge = recData.match_type === 'exact'
+          ? '<span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Direct Match</span>'
+          : '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">Compatible</span>';
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="font-semibold text-efans-dark text-sm truncate">${product.name}</p>
+                ${matchBadge}
+              </div>
+              <p class="text-xs text-gray-500">${specs}</p>
+              ${product.match_reason ? '<p class="text-xs text-gray-400 mt-1">' + product.match_reason + '</p>' : ''}
+            </div>
+            <div class="text-right flex-shrink-0">
+              ${priceStr ? '<p class="font-bold text-efans-dark">' + priceStr + '</p>' : ''}
+              <p class="text-xs text-green-600 font-medium">In Stock</p>
+              <p class="text-xs text-efans-accent mt-1 font-medium">View &rarr;</p>
+            </div>
+          </div>
+        `;
+        recsContent.appendChild(card);
+      });
+    }
+
     // Form submission
     enquiryForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -629,6 +729,7 @@
           uploadZone.classList.add('hidden');
           aiResult.classList.add('hidden');
           aiError.classList.add('hidden');
+          recommendations.classList.add('hidden');
           successMessage.classList.remove('hidden');
         } else {
           alert('Something went wrong. Please try again or email us directly at hello@efans.co.uk');
