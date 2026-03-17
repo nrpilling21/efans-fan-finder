@@ -1,13 +1,331 @@
-y-2 text-sm text-gray-400">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fan Replacement Finder | Send Us Your ID Plate | eFans Direct</title>
+  <meta name="description" content="Got a fan that's failed? Send us a photo of the ID plate &mdash; we'll identify it and find you a replacement or equivalent. Free service from eFans Direct.">
+  <link rel="canonical" href="https://fan-finder.efans.co.uk">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            efans: {
+              dark: '#1a1a2e',
+              navy: '#16213e',
+              blue: '#0f3460',
+              accent: '#e94560',
+              orange: '#ff6b35',
+              light: '#f8f9fa',
+              muted: '#6c757d'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .upload-zone { transition: all 0.2s ease; }
+    .upload-zone.dragover { border-color: #e94560; background-color: rgba(233,69,96,0.05); }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .pulse-border { animation: pulseBorder 2s ease-in-out infinite; }
+    @keyframes pulseBorder { 0%, 100% { border-color: #e94560; } 50% { border-color: #ff6b35; } }
+  </style>
+
+  <!-- FAQPage Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "The fan model is discontinued &mdash; can you still find a replacement?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Usually, yes. Most manufacturers publish cross-reference guides for discontinued models. We carry current equivalents from Vent-Axia, Systemair, S&P, Elta, and others. If the original model is gone, we'll find you something that matches the duty, duct size, and mounting."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What if the ID plate is missing or unreadable?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Send us whatever you've got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans. We can usually work it out from the housing shape, motor type, and application."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How quickly can you get the replacement to me?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "If we stock the replacement or equivalent, it's next-day delivery. For non-stock items or specialist orders, we'll give you an honest lead time."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I know what size extractor fan I need?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "It depends on the room volume and the required air change rate. For bathrooms, Building Regs require 15 l/s (54 m&#179;/h). For commercial kitchens, you might need 20-30 air changes per hour. Send us the room dimensions and use &mdash; we'll calculate it for you."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can you supply the same brand, or do I need to switch?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We stock all the major brands &mdash; Vent-Axia, Systemair, S&P, Elta, Greenwood, Nuaire, Xpelair, and more. If the original brand is available, we'll quote it. If not, we'll recommend the closest equivalent."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "I need to replace 20+ fans across a building. Can you help?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Absolutely &mdash; that's our bread and butter. Send us the details and we'll put together a full schedule with quantities, lead times, and pricing."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="bg-white text-gray-900">
+
+  <!-- Header -->
+  <header class="bg-efans-dark text-white">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="text-2xl font-bold tracking-tight">eFans<span class="text-efans-accent">.</span></div>
+        <span class="text-sm text-gray-400 hidden sm:inline">Fan Replacement Finder</span>
+      </div>
+      <div class="flex items-center gap-4 text-sm">
+        <a href="tel:01onal" class="hidden sm:flex items-center gap-1 text-gray-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+          01onal
+        </a>
+        <a href="https://www.efans.co.uk" target="_blank" class="text-efans-accent hover:text-white font-medium">efans.co.uk &#8594;</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="bg-gradient-to-br from-efans-dark via-efans-navy to-efans-blue text-white py-16 sm:py-24">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6">Fan Replacement Finder</h1>
+      <p class="text-xl sm:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto">Got a failed fan? Send us a photo of the ID plate &mdash; we'll identify it and find you a replacement or equivalent.</p>
+      <p class="text-base text-gray-400 mb-8">Free. No obligation. Works for any brand.</p>
+      <a href="#upload" class="inline-flex items-center gap-2 bg-efans-accent hover:bg-red-600 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        Send Us Your Fan Photo
+      </a>
+      <div class="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
         <span>Vent-Axia</span><span>&bull;</span>
-        <span Systemair</span><span>&bull;</span>
+        <span>Systemair</span><span>&bull;</span>
         <span>S&P</span><span>&bull;</span>
         <span>Elta</span><span>&bull;</span>
         <span>Nuaire</span><span>&bull;</span>
-        <span Greenwood</span><span>&bull;</span>
+        <span>Greenwood</span><span>&bull;</span>
         <span>Xpelair</span><span class="hidden sm:inline">&bull;</span>
-        <span class="hidden sm:inline">and more</span>-3">
-            <svg class="animate-spin h-5 w-5 text-efans-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>nderline">01204 263014</a></p>
+        <span class="hidden sm:inline">and more</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="py-16 bg-white">
+    <div class="max-w-5xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Step 1 -->
+        <div class="text-center">
+          <div class="w-16 h-16 bg-efans-dark text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">1</div>
+          <h3 class="font-semibold text-lg mb-2">Find the ID Plate</h3>
+          <p class="text-gray-600 text-sm">Usually on the motor housing or side of the casing. Shows manufacturer, model number, voltage, and airflow rating.</p>
+        </div>
+        <!-- Step 2 -->
+        <div class="text-center">
+          <div class="w-16 h-16 bg-efans-accent text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">2</div>
+          <h3 class="font-semibold text-lg mb-2">Upload a Photo</h3>
+          <p class="text-gray-600 text-sm">Snap a clear photo of the ID plate. Our AI reads it instantly and extracts the key specs. Include any other details you have.</p>
+        </div>
+        <!-- Step 3 -->
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
+          <h3 class="font-semibold text-lg mb-2">Get Your Replacement</h3>
+          <p class="text-gray-600 text-sm">We'll come back with a direct replacement or equivalent &mdash; usually within a few hours. In stock? Next-day delivery.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Upload & Form Section -->
+  <section id="upload" class="py-16 bg-efans-light">
+    <div class="max-w-3xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-2">Upload Your Fan Photo</h2>
+      <p class="text-center text-gray-600 mb-8">Snap the ID plate and we'll identify it in seconds.</p>
+
+      <!-- Upload Zone -->
+      <div id="uploadZone" class="upload-zone border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-efans-accent transition-colors bg-white mb-6">
+        <input type="file" id="fileInput" accept="image/*" multiple class="hidden" capture="environment">
+        <div id="uploadPrompt">
+          <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          <p class="text-gray-600 font-medium mb-1">Tap to take a photo or upload an image</p>
+          <p class="text-gray-400 text-sm">JPEG, PNG up to 10MB. Multiple photos welcome.</p>
+        </div>
+        <div id="uploadPreview" class="hidden">
+          <!-- Thumbnails appear here -->
+        </div>
+      </div>
+
+      <!-- AI Identification Result -->
+      <div id="aiResult" class="hidden fade-in mb-6">
+        <div class="bg-white border-2 border-green-500 rounded-xl p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h3 class="font-bold text-lg text-green-800">Fan Identified</h3>
+          </div>
+          <div id="aiResultContent" class="grid sm:grid-cols-2 gap-3 text-sm">
+            <!-- AI results populate here -->
+          </div>
+          <p class="text-xs text-gray-500 mt-4">AI-assisted reading &mdash; our team will verify before quoting.</p>
+        </div>
+      </div>
+
+      <!-- Product Recommendations -->
+      <div id="recommendations" class="hidden fade-in mb-6">
+        <div id="recsFound" class="hidden">
+          <div class="bg-white border-2 border-efans-accent rounded-xl p-6">
+            <div class="flex items-center gap-2 mb-4">
+             <svg class="w-6 h-6 text-efans-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <h3 class="font-bold text-lg text-efans-dark" id="recsTitle">Recommended Replacements</h3>
+            </div>
+            <p class="text-sm text-gray-600 mb-4" id="recsSubtitle">Based on the ID plate reading, here are replacement fans we stock:</p>
+            <div id="recsContent" class="space-y-3">
+              <!-- Product cards populate here -->
+            </div>
+            <p class="text-xs text-gray-500 mt-4 border-t border-gray-100 pt-3">Prices shown exc. VAT. Need a different spec? Fill in the form below for a custom quote.</p>
+          </div>
+        </div>
+        <div id="recsNone" class="hidden">
+          <div class="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <div class="flex items-start gap-3">
+              <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <div>
+                <p class="font-semibold text-blue-800 mb-1">We'll find your replacement</p>
+                <p class="text-sm text-blue-700">We couldn't match this automatically to our catalogue &mdash; but that's fine. Fill in the form below and our team will find the right replacement fan for you. We've got 40+ years of experience matching fans.</p>
+                <p class="text-sm text-blue-600 mt-2">Or call us now on <a href="tel:01204263014" class="font-semibold underline">01204 263014</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Loading -->
+      <div id="aiLoading" class="hidden mb-6">
+        <div class="bg-white border border-gray-200 rounded-xl p-6 text-center">
+          <div class="inline-flex items-center gap-3">
+            <svg class="animate-spin h-5 w-5 text-efans-accent" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="text-gray-600 font-medium">Reading ID plate...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Error -->
+      <div id="aiError" class="hidden fade-in mb-6">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <p class="text-amber-800 text-sm"><strong>Couldn't read the plate automatically</strong> &mdash; no problem. Fill in what you can below and our team will identify it manually.</p>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form id="enquiryForm" class="bg-white rounded-xl p-6 shadow-sm space-y-4">
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+            <input type="text" name="name" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="Your name">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+            <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="you@company.com">
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input type="tel" name="phone" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="07xxx xxxxxx">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+            <input type="text" name="company" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="Company name (optional)">
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Duct Size (if known)</label>
+            <select name="duct_size" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none bg-white">
+              <option value="">Not sure</option>
+              <option value="100mm">100mm</option>
+              <option value="125mm">125mm</option>
+              <option value="150mm">150mm</option>
+              <option value="200mm">200mm</option>
+              <option value="250mm">250mm</option>
+              <option value="300mm">300mm</option>
+              <option value="315mm">315mm</option>
+              <option value="400mm+">400mm+</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Application</label>
+            <select name="application" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none bg-white">
+      <option value="">Select...</option>
+              <option value="bathroom">Bathroom / WC</option>
+              <option value="kitchen_domestic">Kitchen (Domestic)</option>
+              <option value="kitchen_commercial">Kitchen (Commercial)</option>
+              <option value="commercial">Commercial / Office</option>
+              <option value="industrial">Industrial / Warehouse</option>
+              <option value="mvhr">MVHR / MEV</option>
+              <option value="plant_room">Plant Room</option>
+              <option value="car_park">Car Park</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- AI-detected info (hidden fields) -->
+        <input type="hidden" name="ai_manufacturer" id="aiManufacturer">
+        <input type="hidden" name="ai_model" id="aiModel">
+        <input type="hidden" name="ai_specs" id="aiSpecs">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+          <input type="number" name="quantity" min="1" value="1" class="w-24 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+          <textarea name="notes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="What went wrong? Any other details that might help us find the right replacement..."></textarea>
+        </div>
+
+        <button type="submit" id="submitBtn" class="w-full bg-efans-accent hover:bg-red-600 text-white font-semibold py-3.5 rounded-lg text-base transition-colors flex items-center justify-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+          Get My Replacement Quote
+        </button>
+        <p class="text-xs text-gray-500 text-center">We typically respond within 2-4 hours during working hours.</p>
+      </form>
+
+      <!-- Success Message -->
+      <div id="successMessage" class="hidden fade-in">
+        <div class="bg-green-50 border-2 border-green-500 rounded-xl p-8 text-center">
+          <svg class="w-16 h-16 text-green-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <h3 class="text-2xl font-bold text-green-800 mb-2">Enquiry Sent</h3>
+          <p class="text-green-700 mb-4">We've received your fan photo and details. Our team will identify the fan and get back to you with a replacement quote &mdash; usually within 2-4 hours.</p>
+          <p class="text-sm text-green-600">Need it urgent? Call us on <a href="tel:01204263014" class="font-semibold underline">01204 263014</a></p>
         </div>
       </div>
     </div>
@@ -25,44 +343,405 @@ y-2 text-sm text-gray-400">
         </div>
         <div class="bg-efans-light rounded-xl p-6">
           <h3 class="font-semibold text-efans-dark mb-2">Inline / Duct Fans</h3>
-          <p class="text-sm text-gray-600">On the motor casing, visible from the side of the unit. U\ÝX[HXØÙ\ÜÚXHÚ]Ý][[Ý[ÈÛHHXÝÜÙ]]Û\ÜÏHËYY[Ë[YÚÝ[Y^MÈÛ\ÜÏHÛ\Ù[ZXÛ^YY[ËY\ÈXLÙ[YYØ[[ÏÚÏÛ\ÜÏH^\ÛH^YÜ^KMÛHØÜÛÝ\Ú[ÈÜ[ÝÜ[Ý[ÛÚÈ\Ý[HXÚÈ[ÚY\ÈÙH[]ÜÙ]]Û\ÜÏHËYY[Ë[YÚÝ[Y^MÈÛ\ÜÏHÛ\Ù[ZXÛ^YY[ËY\ÈXLU[]ÏÚÏÛ\ÜÏH^\ÛH^YÜ^KMÛHÚYH[[ÙH[]\ÝX[HXØÙ\ÜÚXHÛHHÙÜ[ÛÛHÚ]Ý][[Ý[ËÜÙ]Ù]]Û\ÜÏH]MËX[X\MLÜ\Ü\X[X\LÝ[Y^MHÛ\ÜÏH^\ÛH^X[X\NÝÛÏ]HÛÜÜZ\ÜÚ[ÏÏÜÝÛÏÙ[\ÈHÝÈÙH[]Ù[	Y\ÚÈHXÝÚ^KÝ\Ú[ÈÚ\K[][È[ÝHØ[ÙYKÙIÝHY[Ú[È\ÈÜ
-
-ÈYX\ËÙHØ[\ÝX[HÛÜÈ]Ý]ÜÙ]Ù]ÜÙXÝ[ÛKKHÚ]	ÜÈÛ[Q]HKO
-eBÙ]]Û\ÜÏHË]Ú]HÝ[Y[ÈMÚYÝË\ÛHÛ\ÜÏHÛ\Ù[ZXÛ^YY[ËY\È^\ÛH]HÙX[YXÝ\OÜÛ\ÜÏH^^È^YÜ^KML]LH[È\ÈÛÝÈYH[Ù[\ÈÝ\[Ü\ØÛÛ[YYÜÙ]Ù]Ù]Ù]ÜÙXÝ[Û]Û\ÜÏHÜXÙK^KM]Z[ÈÛ\ÜÏHÜÝ\Ü\Ü\YÜ^KLÝ[Y^Ý[[X\HÛ\ÜÏH^][\ËXÙ[\\ÝYKX]ÙY[MHÝ\ÛÜ\Ú[\Û[YY][H^YY[ËY\ÈØ[[ÝHÝ\HHØ[YH[ÜÈHYYÈÝÚ]ÚÂÝÈÛ\ÜÏHËMHMH^YÜ^KMÜÝ\[Ü[Ý]KLN[Ú][Û][ÙÜH[HÛHÝÚÙOHÝ\[ÛÛÜY]ÐÞH]ÝÚÙK[[XØ\HÝ[ÝÚÙK[[ZÚ[HÝ[ÝÚÙK]ÚYHHLNH[MÈ
-ËMËMÈÜ]ÜÝÏÜÝ[[X\OÛ\ÜÏHMHMH^\ÛH^YÜ^KMÙHÝØÚÈ[HXZÜ[È	Y\ÚÈ[P^XKÞ\Ý[XZ\É[KÜY[ÛÛÙXZ\K[Z\[[ÜKYHÜYÚ[[[\È]Z[XKÙIÛ][ÝH]YÝÙIÛXÛÛ[Y[HÛÜÙ\Ý\]Z][[ÜÙ]Z[Ï]Z[ÈÛ\ÜÏHÜÝ\Ü\Ü\YÜ^KLÝ[Y^Ý[[X\HÛ\ÜÏH^][\ËXÙ[\\ÝYKX]ÙY[MHÝ\ÛÜ\Ú[\Û[YY][H^YY[ËY\ÈÚ]YHQ]H\ÈZ\ÜÚ[ÈÜÝ]ÙØÝ\ÏÂÝÈÛ\ÜÏHËMHMH^YÜ^KMÜÝ\[Ü[Ý]KLN[Ú][Û][ÙÜH[HÛHÝÚÙOHÝ\[ÛÛÜY]ÐÞH]ÝÚÙK[[XØ\HÝ[ÝÚÙK[[ZÚ[HÝ[ÝÚÙK]ÚYHHLNH[MÈ
-ËMËMÈÜ]ÜÝÏÜÝ[[X\OÛ\ÜÏHMHMH^\ÛH^YÜ^KMÙ[\ÈÚ]]\[ÝIÝHÛÝ	Y\ÚÈHÝÈÙH[]Ù[HXÝÚ^KÚ\H]	ÜÈ[Ý[YÝ\X[H\È
-
-ÈYX\ÈÙ^\Y[ÙHY[YZ[È[ËÙHØ[\ÝX[HÛÜÈ]Ý]ÛHHÝ\Ú[ÈÚ\K[ÝÜ\K[\XØ][ÛÜÙ]Z[Ï]Z[ÈÛ\ÜÏHÜÝ\Ü\Ü\YÜ^KLÝ[Y^Ý[[X\HÛ\ÜÏH^][\ËXÙ[\\ÝYKX]ÙY[MHÝ\ÛÜ\Ú[\Û[YY][H^YY[ËY\ÈHYYÈ\XÙH
-È[ÈXÜÜÜÈHZ[[ËØ[[ÝH[ÂÝÈÛ\ÜÏHËMHMH^YÜ^KMÜÝ\[Ü[Ý]KLN[Ú][Û][ÙÜH[HÛHÝÚÙOHÝ\[ÛÛÜY]ÐÞH]ÝÚÙK[[XØ\HÝ[ÝÚÙK[[ZÚ[HÝ[ÝÚÙK]ÚYHHLNH[MÈ
-ËMËMÈÜ]ÜÝÏÜÝ[[X\OÛ\ÜÏHMHMH^\ÛH^YÜ^KMXÛÛ][H	Y\ÚÈ]	ÜÈÝ\XY[]\Ù[\ÈH]Z[È[ÙIÛ]ÙÙ]\H[ØÚY[HÚ]]X[]Y\ËXY[Y\Ë[XÚ[ËÜÙ]Z[Ï]Z[ÈÛ\ÜÏHÜÝ\Ü\Ü\YÜ^KLÝ[Y^Ý[[X\HÛ\ÜÏH^][\ËXÙ[\\ÝYKX]ÙY[MHÝ\ÛÜ\Ú[\Û[YY][H^YY[ËY\ÈÝÈ]ZXÚÛHØ[[ÝHÙ]H\XÙ[Y[ÈYOÂÝÈÛ\ÜÏHËMHMH^YÜ^KMÜÝ\[Ü[Ý]KLN[Ú][Û][ÙÜH[HÛHÝÚÙOHÝ\[ÛÛÜY]ÐÞH]ÝÚÙK[[XØ\HÝ[ÝÚÙK[[ZÚ[HÝ[ÝÚÙK]ÚYHHLNH[MÈ
-ËMËMÈÜ]ÜÝÏÜÝ[[X\OÛ\ÜÏHMHMH^\ÛH^YÜ^KMYÙHÝØÚÈH\XÙ[Y[Ü\]Z][[]	ÜÈ^Y^H[]\KÜÛ\ÝØÚÈ][\ÈÜÜXÚX[\ÝÜ\ËÙIÛÚ]H[ÝH[Û\ÝXY[YKÜÙ]Z[Ï
-r]Û\ÜÏH^^È^YÜ^KML]MKØ[\ÈÝÈÛØHOHÜÙ]Ù][Y_OÜ	ÛX]ÚYÙ_BÙ]Û\ÜÏH^^È^YÜ^KMLÜÜXÜßOÜ	ÜÙXÝX]ÚÜX\ÛÛÈ	ÏÛ\ÜÏH^^È^YÜ^KM]LHÈ
-ÈÙXÝX]ÚÜX\ÛÛ
-È	ÏÜÈ	ÉßBÙ]]Û\ÜÏH^\YÚ^\Ú[ËL	ÜXÙTÝÈ	ÏÛ\ÜÏHÛXÛ^YY[ËY\ÈÈ
-ÈXÙTÝ
-È	ÏÜÈ	ÉßBÛ\ÜÏH^^È^YÜY[MÛ[YY][H[ÝØÚÏÜÛ\ÜÏH^^È^YY[ËXXØÙ[]LHÛ[YY][HY]È	\ÏÜÙ]Ù]ÂXÜÐÛÛ[\[Ú[
-Ø\
-NÂJNÂBËÈÜHÝXZ\ÜÚ[Û[]Z\QÜKY][\Ý[\	ÜÝXZ]	Ë\Þ[È
-JHOÂK][Y][
+          <p class="text-sm text-gray-600">On the motor casing, visible from the side of the unit. Usually accessible without removing from the duct.</p>
+        </div>
+        <div class="bg-efans-light rounded-xl p-6">
+          <h3 class="font-semibold text-efans-dark mb-2">Centrifugal Fans</h3>
+          <p class="text-sm text-gray-600">On the scroll housing or motor mount. Look around the back and sides of the unit.</p>
+        </div>
+        <div class="bg-efans-light rounded-xl p-6">
+          <h3 class="font-semibold text-efans-dark mb-2">MVHR Units</h3>
+          <p class="text-sm text-gray-600">On the side panel of the unit, usually accessible from the loft or plant room without removing.</p>
+        </div>
+      </div>
+      <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-5">
+        <p class="text-sm text-amber-800"><strong>Plate worn or missing?</strong> Send us a photo of the fan itself &mdash; the duct size, housing shape, anything you can see. We've been doing this for 40+ years. We can usually work it out.</p>
+      </div>
+    </div>
+  </section>
 
-NÂÝXZ]\ØXYHYNÂÝXZ][\SH	ÏÝÈÛ\ÜÏH[[X]K\Ü[MHËMH[ÏHËÝÝÝËÌËÜËÌÜÝÈ[HÛHY]ÐÞHÚ\ÛHÛ\ÜÏHÜXÚ]KLHÞHLÞOHLHLÝÚÙOHÝ\[ÛÛÜÝÚÙK]ÚYHØÚ\ÛO]Û\ÜÏHÜXÚ]KMÍH[HÝ\[ÛÛÜHMLNNNÍKÍÌÈ
-KÍÌÈL
-L
-KLPMËM
-ËMMLÌË
-KLÍH
-KÈ
-ËLÎËL
-ÞÜ]ÜÝÏÙ[[ËÎÂÛÛÝÜQ]HH]ÈÜQ]J[]Z\QÜJNÂÛÛÝ^[ØYHØXÝÛQ[Y\ÊÜQ]JNÂ^[ØY[XYÙ\ÈH[XYÙP\ÙMÎÂHÂÛÛÝ\ÜÛÙHH]ØZ]]Ú
-	ËØ\KÜÝXZ]	ËÂY]Ù	ÔÔÕ	ËXY\ÎÈ	ÐÛÛ[U\IÎ	Ø\XØ][ÛÚÛÛÈKÙNÓÓÝ[ÚYJ^[ØY
-BJNÂÛÛÝ]HH]ØZ]\ÜÛÙKÛÛ
-NÂY
-]KÝXØÙ\ÜÊHÂ[]Z\QÜKÛ\ÜÓ\ÝY
-	ÚY[ÊNÂ\ØYÛKÛ\ÜÓ\ÝY
-	ÚY[ÊNÂZT\Ý[Û\ÜÓ\ÝY
-	ÚY[ÊNÂZQ\ÜÛ\ÜÓ\ÝY
-	ÚY[ÊNÂXÛÛ[Y[][ÛËÛ\ÜÓ\ÝY
-	ÚY[ÊNÂÝXØÙ\ÜÓY\ÜØYÙKÛ\ÜÓ\Ý[[ÝJ	ÚY[ÊNÂH[ÙHÂ[\
-	ÔÛÛY][ÈÙ[ÜÛËX\ÙHHYØZ[Ü[XZ[\È\XÝH][ÐY[ËÛËZÉÊNÂÝXZ]\ØXYH[ÙNÂÝXZ][\SH	ÑÙ]^H\XÙ[Y[][ÝIÎÂBHØ]Ú
-\HÂ[\
-	ÐÛÛXÝ[Û\ÜX\ÙH[XZ[\È\XÝH][ÐY[ËÛËZÈÚ][Ý\[ÝËÊNÂÝXZ]\ØXYH[ÙNÂÝXZ][\SH	ÑÙ]^H\XÙ[Y[][ÝIÎÂBJNÂÜØÜ\ØÙOÚ[
+  <!-- What's on an ID Plate -->
+  <section class="py-16 bg-efans-light">
+    <div class="max-w-4xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-10">What Information Is On a Fan ID Plate?</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Manufacturer & Model</p>
+          <p class="text-xs text-gray-500 mt-1">The most important bit &mdash; tells us exactly what fan you have.</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Voltage & Frequency</p>
+          <p class="text-xs text-gray-500 mt-1">230V/50Hz (single-phase) or 400V/50Hz (three-phase).</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Airflow (m&#179;/h or l/s)</p>
+          <p class="text-xs text-gray-500 mt-1">The duty &mdash; essential for matching a replacement.</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Power (W) & Current (A)</p>
+          <p class="text-xs text-gray-500 mt-1">Motor size &mdash; helps us find the right equivalent.</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Part / SKU Number</p>
+          <p class="text-xs text-gray-500 mt-1">Sometimes different from the model name.</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Speed (RPM)</p>
+          <p class="text-xs text-gray-500 mt-1">Useful for matching performance.</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">IP Rating</p>
+          <p class="text-xs text-gray-500 mt-1">IP44 for wet areas, IP54 for dusty environments.</p>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm">
+          <p class="font-semibold text-efans-dark text-sm">Date of Manufacture</p>
+          <p class="text-xs text-gray-500 mt-1">Helps us know if the model is current or discontinued.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-16 bg-white">
+    <div class="max-w-3xl mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-10">Common Questions</h2>
+      <div class="space-y-4">
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            The fan model is discontinued &mdash; can you still find a replacement?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">Usually, yes. Most manufacturers publish cross-reference guides for discontinued models. We carry current equivalents from Vent-Axia, Systemair, S&P, Elta, and others. If the original model is gone, we'll find you something that matches the duty, duct size, and mounting.</p>
+        </details>
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            I need to replace a commercial fan but the ductwork can't change. Can you match the connection?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">That's the most common requirement. Send us the duct diameter and the airflow duty &mdash; we'll spec a fan that fits the existing installation.</p>
+        </details>
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            How do I know what size extractor fan I need?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">It depends on the room volume and the required air change rate. For bathrooms, Building Regs require 15 l/s (54 m&#179;/h). For commercial kitchens, you might need 20-30 air changes per hour. Send us the room dimensions and use &mdash; we'll calculate it for you.</p>
+        </details>
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            Can you supply the same brand, or do I need to switch?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">We stock all the major brands &mdash; Vent-Axia, Systemair, S&P, Elta, Greenwood, Nuaire, Xpelair, and more. If the original brand is available, we'll quote it. If not, we'll recommend the closest equivalent.</p>
+        </details>
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            What if the ID plate is missing or unreadable?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">Send us whatever you got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans. We can usually work it out from the housing shape, motor type, and application.</p>
+        </details>
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            I need to replace 20+ fans across a building. Can you help?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">Absolutely &mdash; that's our bread and butter. Send us the details and we'll put together a full schedule with quantities, lead times, and pricing.</p>
+        </details>
+        <details class="group border border-gray-200 rounded-xl">
+          <summary class="flex items-center justify-between p-5 cursor-pointer font-medium text-efans-dark">
+            How quickly can you get the replacement to me?
+            <svg class="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </summary>
+          <p class="px-5 pb-5 text-sm text-gray-600">If we stock the replacement or equivalent, it's next-day delivery. For non-stock items or specialist orders, we'll give you an honest lead time.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trust Bar -->
+  <section class="py-10 bg-efans-dark text-white">
+    <div class="max-w-5xl mx-auto px-4">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-6 text-center text-sm">
+        <div>
+          <p class="text-2xl font-bold text-efans-accent">333+</p>
+          <p class="text-gray-400">Trustpilot Reviews</p>
+          <p class="text-yellow-400 text-xs">&#9733;&#9733;&#9733;&#9733;&#9733; 4.8</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-efans-accent">40+</p>
+          <p class="text-gray-400">Years in Ventilation</p>
+        </div>
+        <div>
+          <p class="text-2xl font-bold text-efans-accent">7,000+</p>
+          <p class="text-gray-400">Trade Customers</p>
+        </div>
+        <div>
+          <svg class="w-8 h-8 text-efans-accent mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+          <p class="text-gray-400">Next-Day Delivery</p>
+        </div>
+        <div>
+          <svg class="w-8 h-8 text-efans-accent mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+          <p class="text-gray-400">Real People on the Phone</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="py-8 bg-efans-dark border-t border-gray-800 text-center text-sm text-gray-500">
+    <p>&copy; 2026 eFans Direct Ltd. All rights reserved.</p>
+    <p class="mt-1">
+      <a href="https://www.efans.co.uk" class="text-gray-400 hover:text-white">efans.co.uk</a>
+      <span class="mx-2">|</span>
+      <a href="mailto:hello@efans.co.uk" class="text-gray-400 hover:text-white">hello@efans.co.uk</a>
+      <span class="mx-2">|</span>
+      <a href="tel:01204263014" class="text-gray-400 hover:text-white">01204 263014</a>
+    </p>
+  </footer>
+
+  <!-- JavaScript -->
+  <script>
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const aiResult = document.getElementById('aiResult');
+    const aiResultContent = document.getElementById('aiResultContent');
+    const aiLoading = document.getElementById('aiLoading');
+    const aiError = document.getElementById('aiError');
+    const recommendations = document.getElementById('recommendations');
+    const recsFound = document.getElementById('recsFound');
+    const recsNone = document.getElementById('recsNone');
+    const recsContent = document.getElementById('recsContent');
+    const recsTitle = document.getElementById('recsTitle');
+    const recsSubtitle = document.getElementById('recsSubtitle');
+    const enquiryForm = document.getElementById('enquiryForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const successMessage = document.getElementById('successMessage');
+
+    let uploadedFiles = [];
+    let imageBase64s = [];
+
+    // Upload zone click
+    uploadZone.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+    function handleFiles(files) {
+      uploadedFiles = Array.from(files);
+      imageBase64s = [];
+
+      // Show previews
+      uploadPrompt.classList.add('hidden');
+      uploadPreview.classList.remove('hidden');
+      uploadPreview.innerHTML = '';
+
+      const previewContainer = document.createElement('div');
+      previewContainer.className = 'flex flex-wrap gap-3 justify-center';
+
+      uploadedFiles.forEach((file, i) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imageBase64s.push(e.target.result);
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'relative';
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.className = 'w-24 h-24 object-cover rounded-lg border-2 border-gray-200';
+          wrapper.appendChild(img);
+          previewContainer.appendChild(wrapper);
+
+          // Auto-identify after first image loads
+          if (i === 0) {
+            identifyFan(e.target.result);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      const addMore = document.createElement('button');
+      addMore.type = 'button';
+      addMore.className = 'w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-efans-accent hover:text-efans-accent transition-colors';
+      addMore.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>';
+      addMore.addEventListener('click', (e) => { e.stopPropagation(); fileInput.click(); });
+
+      uploadPreview.appendChild(previewContainer);
+      uploadPreview.appendChild(addMore);
+    }
+
+    async function identifyFan(base64Image) {
+      aiLoading.classList.remove('hidden');
+      aiResult.classList.add('hidden');
+      aiError.classList.add('hidden');
+      recommendations.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/identify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image })
+        });
+
+        const data = await response.json();
+        aiLoading.classList.add('hidden');
+
+        if (data.success && data.fields) {
+          showAiResult(data.fields);
+          if (data.recommendations) {
+            showRecommendations(data.recommendations);
+          }
+        } else {
+          aiError.classList.remove('hidden');
+          // Still show "contact us" recommendation
+          showRecommendations({ match_type: 'none', recommendations: [] });
+        }
+      } catch (err) {
+        aiLoading.classList.add('hidden');
+        aiError.classList.remove('hidden');
+      }
+    }
+
+    function showAiResult(fields) {
+      aiResult.classList.remove('hidden');
+      aiResultContent.innerHTML = '';
+
+      const fieldMap = {
+        manufacturer: 'Manufacturer',
+        model: 'Model',
+        part_number: 'Part / SKU',
+        voltage: 'Voltage',
+        power: 'Power',
+        current: 'Current',
+        airflow: 'Airflow',
+        speed: 'Speed (RPM)',
+        ip_rating: 'IP Rating',
+        frequency: 'Frequency',
+        date: 'Date',
+        notes: 'Additional Info'
+      };
+
+      for (const [key, label] of Object.entries(fieldMap)) {
+        if (fields[key]) {
+          const div = document.createElement('div');
+          div.className = 'flex justify-between py-1.5 border-b border-gray-100';
+          div.innerHTML = `<span class="text-gray-500">${label}</span><span class="font-medium text-efans-dark">${fields[key]}</span>`;
+          aiResultContent.appendChild(div);
+        }
+      }
+
+      // Populate hidden fields
+      document.getElementById('aiManufacturer').value = fields.manufacturer || '';
+      document.getElementById('aiModel').value = fields.model || '';
+      document.getElementById('aiSpecs').value = JSON.stringify(fields);
+    }
+
+    function showRecommendations(recData) {
+      recommendations.classList.remove('hidden');
+      recsFound.classList.add('hidden');
+      recsNone.classList.add('hidden');
+      recsContent.innerHTML = '';
+
+      if (recData.match_type === 'none' || !recData.recommendations || recData.recommendations.length === 0) {
+        recsNone.classList.remove('hidden');
+        return;
+      }
+
+      recsFound.classList.remove('hidden');
+
+      if (recData.match_type === 'exact') {
+        recsTitle.textContent = 'We Stock This Fan';
+        recsSubtitle.textContent = 'We found a direct match in our catalogue:';
+      } else {
+        recsTitle.textContent = 'Recommended Replacements';
+        recsSubtitle.textContent = 'Based on size, airflow, and motor type &mdash; here are compatible replacements:';
+      }
+
+      recData.recommendations.forEach(product => {
+        const card = document.createElement('a');
+        card.href = product.url;
+        card.target = '_blank';
+        card.rel = 'noopener';
+        card.className = 'block bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-4 transition-colors';
+
+        const priceStr = product.price_gbp ? '&#163;' + product.price_gbp.toFixed(2) : '';
+        const airflowStr = product.airflow_m3h ? product.airflow_m3h + ' m&#179;/h' : '';
+        const sizeStr = product.size_mm ? product.size_mm + 'mm' : '';
+        const motorStr = product.motor_type || '';
+        const specs = [sizeStr, motorStr, airflowStr].filter(Boolean).join(' &#183; ');
+
+        const matchBadge = recData.match_type === 'exact'
+          ? '<span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Direct Match</span>'
+          : '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">Compatible</span>';
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="font-semibold text-efans-dark text-sm truncate">${product.name}</p>
+                ${matchBadge}
+              </div>
+              <p class="text-xs text-gray-500">${specs}</p>
+              ${product.match_reason ? '<p class="text-xs text-gray-400 mt-1">' + product.match_reason + '</p>' : ''}
+            </div>
+            <div class="text-right flex-shrink-0">
+              ${priceStr ? '<p class="font-bold text-efans-dark">' + priceStr + '</p>' : ''}
+              <p class="text-xs text-green-600 font-medium">In Stock</p>
+              <p class="text-xs text-efans-accent mt-1 font-medium">View &rarr;</p>
+            </div>
+          </div>
+        `;
+        recsContent.appendChild(card);
+      });
+    }
+
+    // Form submission
+    enquiryForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending...';
+
+      const formData = new FormData(enquiryForm);
+      const payload = Object.fromEntries(formData);
+      payload.images = imageBase64s;
+
+      try {
+        const response = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          enquiryForm.classList.add('hidden');
+          uploadZone.classList.add('hidden');
+          aiResult.classList.add('hidden');
+          aiError.classList.add('hidden');
+          recommendations.classList.add('hidden');
+          successMessage.classList.remove('hidden');
+        } else {
+          alert('Something went wrong. Please try again or email us directly at hello@efans.co.uk');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Get My Replacement Quote';
+        }
+      } catch (err) {
+        alert('Connection error. Please email us directly at hello@efans.co.uk with your fan photo.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Get My Replacement Quote';
+      }
+    });
+  </script>
+</body>
+</html>
