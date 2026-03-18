@@ -17,7 +17,7 @@ function parseSizeMm(str) {
   const mmMatch = str.match(/(\d{2,4})\s*mm/i);
   if (mmMatch) return parseInt(mmMatch[1]);
   const inchMap = { '4': 100, '5': 125, '6': 150, '7': 180, '8': 200, '9': 225, '10': 250, '12': 315, '14': 355, '16': 400, '18': 450, '20': 500 };
-  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|ÃÂ¢ÃÂÃÂ³|'')/i);
+  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ³|'')/i);
   if (inchMatch && inchMap[inchMatch[1]]) return inchMap[inchMatch[1]];
   return null;
 }
@@ -25,7 +25,7 @@ function parseSizeMm(str) {
 function parseAirflow(str) {
   if (!str) return null;
   str = String(str);
-  const m3hMatch = str.match(/([\d,.]+)\s*m[ÃÂÃÂ³3]\/?h/i);
+  const m3hMatch = str.match(/([\d,.]+)\s*m[ÃÂÃÂÃÂÃÂ³3]\/?h/i);
   if (m3hMatch) return parseFloat(m3hMatch[1].replace(',', ''));
   const lsMatch = str.match(/([\d,.]+)\s*l\/?s/i);
   if (lsMatch) return Math.round(parseFloat(lsMatch[1].replace(',', '')) * 3.6);
@@ -76,7 +76,7 @@ function getRecommendations(fields) {
   const criteria = {
     size_mm: parseSizeMm(fields.model) || parseSizeMm(fields.airflow) || parseSizeMm(fields.notes) ||
              extractSizeFromModel(fields.model) || extractSizeFromModel(fields.part_number),
-    airflow_m3h: parseAirflow(fields.airflow),
+    airflow_m3h: parseAirflow(fields.airflow) || parseFloat(fields.estimated_airflow_m3h) || null,
     motor_type: parseMotorType(fields),
     category: inferCategory(fields),
     brand: fields.manufacturer || null
@@ -101,7 +101,7 @@ function getRecommendations(fields) {
         recommendations: exactMatches.map(p => ({
           ...p,
           match_type: 'exact',
-          match_reason: 'Direct model/SKU match ÃÂ¢ÃÂÃÂ likely the same fan or its current equivalent'
+          match_reason: 'Direct model/SKU match ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ likely the same fan or its current equivalent'
         }))
       };
     }
@@ -129,7 +129,7 @@ function getRecommendations(fields) {
 
       return { ...p, match_score: score, match_reasons: reasons };
     })
-    .filter(p => p.match_score >= 50)
+    .filter(p => p.match_score >= 30)
     .sort((a, b) => b.match_score - a.match_score)
     .slice(0, 5);
 
@@ -140,7 +140,7 @@ function getRecommendations(fields) {
         recommendations: scored.map(p => ({
           ...p,
           match_type: 'similar',
-          match_reason: p.match_reasons.join(' ÃÂÃÂ· ')
+          match_reason: p.match_reasons.join(' ÃÂÃÂÃÂÃÂ· ')
         }))
       };
     }
@@ -150,7 +150,7 @@ function getRecommendations(fields) {
     match_type: 'none',
     criteria,
     recommendations: [],
-    message: "We couldn't find an automatic match, but don't worry ÃÂ¢ÃÂÃÂ our team can help. Submit your enquiry and we'll find the right replacement."
+    message: "We couldn't find an automatic match, but don't worry ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ our team can help. Submit your enquiry and we'll find the right replacement."
   };
 }
 
@@ -247,16 +247,22 @@ Return a JSON object with these fields (use null for any field you can't determi
   "frequency": "e.g. 50Hz",
   "power": "e.g. 150W",
   "current": "e.g. 0.65A",
-  "airflow": "e.g. 500 mÃÂÃÂ³/h or 139 l/s",
+  "airflow": "e.g. 500 mÃÂÃÂÃÂÃÂ³/h or 139 l/s",
   "speed": "e.g. 1400 RPM",
   "ip_rating": "e.g. IP44",
   "date": "Manufacturing date if visible",
-  "notes": "Any other relevant info you can see ÃÂ¢ÃÂÃÂ motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
+  "notes": "Any other relevant info you can see ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
 }
 
 If the image is NOT a fan ID plate (e.g. it's a photo of the fan housing, a random object, or unclear), still try to identify the fan type and manufacturer if possible, and note this in the "notes" field.
 
-IMPORTANT: Even if you cannot see all specs on the plate, use your expert knowledge to estimate them. For example: if the model prefix is "AX" it likely means axial fan - estimate the duct size from the number in the model. If it is a known brand/model, fill in typical airflow, power, voltage, and motor type. Always try to provide airflow in m3/h and size_mm fields based on what you can infer. Add "estimated_specs": true if you filled in specs from knowledge rather than the plate.
+CRITICAL INSTRUCTION: You MUST estimate missing specs even if not on the plate. Use these rules:
+1. AIRFLOW: You MUST provide an airflow estimate in m3/h. Use your knowledge of the manufacturer and model. If unsure, estimate from motor power and fan type.
+2. SIZE: Extract duct/impeller size from the model number. Common patterns: AX56=560mm, K315=315mm, VL200=200mm. The number in the model usually indicates mm size.
+3. FAN TYPE: AX=axial, K/VL/HIT/RVK=inline duct, HPA=plate axial, BF/Silent=bathroom, TD/ACM=mixed flow.
+4. Add a field "size_mm" with the numeric duct/impeller diameter in millimetres.
+5. Add a field "estimated_airflow_m3h" with your best estimate of max airflow in m3/h.
+Always provide these even if approximate - they are essential for finding a replacement. Add "estimated_specs": true if you filled in specs from knowledge rather than the plate.
 
 Return ONLY the JSON object, no other text.`
             }
@@ -282,6 +288,13 @@ Return ONLY the JSON object, no other text.`
 
         if (Object.keys(cleaned).length > 0) {
           // Get product recommendations based on identified fields
+          // Enrich fields with AI estimates for better matching
+          if (cleaned.size_mm && !cleaned.airflow) {
+            cleaned.airflow = cleaned.estimated_airflow_m3h ? cleaned.estimated_airflow_m3h + ' m3/h' : null;
+          }
+          if (cleaned.estimated_airflow_m3h && !cleaned.airflow) {
+            cleaned.airflow = cleaned.estimated_airflow_m3h + ' m3/h';
+          }
           let recommendations = getRecommendations(cleaned);
 
           // Shopify fallback if no catalogue match
