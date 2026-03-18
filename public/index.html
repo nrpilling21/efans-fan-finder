@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fan Replacement Finder | Send Us Your ID Plate | eFans Direct</title>
+  <title>Fan Replacement Finder | AI Fan Identifier | eFans Direct</title>
   <meta name="description" content="Got a fan that's failed? Send us a photo of the ID plate &mdash; we'll identify it and find you a replacement or equivalent. Free service from eFans Direct.">
   <link rel="canonical" href="https://fan-finder.efans.co.uk">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -118,11 +118,11 @@
   <section class="bg-gradient-to-br from-efans-dark via-efans-navy to-efans-blue text-white py-16 sm:py-24">
     <div class="max-w-4xl mx-auto px-4 text-center">
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6">Fan Replacement Finder</h1>
-      <p class="text-xl sm:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto">Got a failed fan? Send us a photo of the ID plate &mdash; we'll identify it and find you a replacement or equivalent.</p>
+      <p class="text-xl sm:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto">Got a failed fan? Upload a photo of the ID plate &mdash; our AI will identify it instantly and recommend a replacement from our catalogue.</p>
       <p class="text-base text-gray-400 mb-8">Free. No obligation. Works for any brand.</p>
       <a href="#upload" class="inline-flex items-center gap-2 bg-efans-accent hover:bg-red-600 text-white font-semibold px-8 py-4 rounded-lg text-lg transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        Send Us Your Fan Photo
+        Upload Your Fan Photo
       </a>
       <div class="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
         <span>Vent-Axia</span><span>&bull;</span>
@@ -157,8 +157,8 @@
         <!-- Step 3 -->
         <div class="text-center">
           <div class="w-16 h-16 bg-green-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">3</div>
-          <h3 class="font-semibold text-lg mb-2">Get Your Replacement</h3>
-          <p class="text-gray-600 text-sm">We'll come back with a direct replacement or equivalent &mdash; usually within a few hours. In stock? Next-day delivery.</p>
+          <h3 class="font-semibold text-lg mb-2">See Your Replacement</h3>
+          <p class="text-gray-600 text-sm">See instant recommendations from our catalogue. Click through to view the product and order &mdash; with next-day delivery available.</p>
         </div>
       </div>
     </div>
@@ -193,7 +193,7 @@
           <div id="aiResultContent" class="grid sm:grid-cols-2 gap-3 text-sm">
             <!-- AI results populate here -->
           </div>
-          <p class="text-xs text-gray-500 mt-4">AI-assisted reading &mdash; our team will verify before quoting.</p>
+          <p class="text-xs text-gray-500 mt-4">AI-assisted reading &mdash; click a product below to view details and order.</p>
         </div>
       </div>
 
@@ -209,7 +209,7 @@
             <div id="recsContent" class="space-y-3">
               <!-- Product cards populate here -->
             </div>
-            <p class="text-xs text-gray-500 mt-4 border-t border-gray-100 pt-3">Prices shown exc. VAT. Need a different spec? Fill in the form below for a custom quote.</p>
+            <p class="text-xs text-gray-500 mt-4 border-t border-gray-100 pt-3">Prices shown exc. VAT. Need help? Call <a href="tel:01204263014" class="text-efans-accent font-semibold underline">01204 263014</a> or email <a href="mailto:hello@efans.co.uk" class="text-efans-accent font-semibold underline">hello@efans.co.uk</a></p>
           </div>
         </div>
         <div id="recsNone" class="hidden">
@@ -218,7 +218,7 @@
               <svg class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               <div>
                 <p class="font-semibold text-blue-800 mb-1">We'll find your replacement</p>
-                <p class="text-sm text-blue-700">We couldn't match this automatically to our catalogue &mdash; but that's fine. Fill in the form below and our team will find the right replacement fan for you. We've got 40+ years of experience matching fans.</p>
+                <p class="text-sm text-blue-700">We couldn't match this automatically to our catalogue &mdash; but don't worry. Give us a call or email with your fan photo and our team will find the right replacement. We've got 40+ years of experience matching fans.</p>
                 <p class="text-sm text-blue-600 mt-2">Or call us now on <a href="tel:01204263014" class="font-semibold underline">01204 263014</a></p>
               </div>
             </div>
@@ -239,95 +239,15 @@
       <!-- AI Error -->
       <div id="aiError" class="hidden fade-in mb-6">
         <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <p class="text-amber-800 text-sm"><strong>Couldn't read the plate automatically</strong> &mdash; no problem. Fill in what you can below and our team will identify it manually.</p>
+          <p class="text-amber-800 text-sm"><strong>Couldn't read the plate automatically</strong> &mdash; no problem. Try a clearer photo, or call <a href="tel:01204263014" class="text-amber-800 font-semibold underline">01204 263014</a>.</p>
         </div>
       </div>
 
       <!-- Form -->
-      <form id="enquiryForm" class="bg-white rounded-xl p-6 shadow-sm space-y-4">
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-            <input type="text" name="name" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="Your name">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-            <input type="email" name="email" required class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="you@company.com">
-          </div>
-        </div>
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input type="tel" name="phone" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="07xxx xxxxxx">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
-            <input type="text" name="company" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="Company name (optional)">
-          </div>
-        </div>
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Duct Size (if known)</label>
-            <select name="duct_size" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none bg-white">
-              <option value="">Not sure</option>
-              <option value="100mm">100mm</option>
-              <option value="125mm">125mm</option>
-              <option value="150mm">150mm</option>
-              <option value="200mm">200mm</option>
-              <option value="250mm">250mm</option>
-              <option value="300mm">300mm</option>
-              <option value="315mm">315mm</option>
-              <option value="400mm+">400mm+</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Application</label>
-            <select name="application" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none bg-white">
-      <option value="">Select...</option>
-              <option value="bathroom">Bathroom / WC</option>
-              <option value="kitchen_domestic">Kitchen (Domestic)</option>
-              <option value="kitchen_commercial">Kitchen (Commercial)</option>
-              <option value="commercial">Commercial / Office</option>
-              <option value="industrial">Industrial / Warehouse</option>
-              <option value="mvhr">MVHR / MEV</option>
-              <option value="plant_room">Plant Room</option>
-              <option value="car_park">Car Park</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- AI-detected info (hidden fields) -->
-        <input type="hidden" name="ai_manufacturer" id="aiManufacturer">
-        <input type="hidden" name="ai_model" id="aiModel">
-        <input type="hidden" name="ai_specs" id="aiSpecs">
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-          <input type="number" name="quantity" min="1" value="1" class="w-24 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none">
-        </div>
-
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
-          <textarea name="notes" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-efans-accent focus:border-transparent outline-none" placeholder="What went wrong? Any other details that might help us find the right replacement..."></textarea>
-        </div>
-
-        <button type="submit" id="submitBtn" class="w-full bg-efans-accent hover:bg-red-600 text-white font-semibold py-3.5 rounded-lg text-base transition-colors flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-          Get My Replacement Quote
-        </button>
-        <p class="text-xs text-gray-500 text-center">We typically respond within 2-4 hours during working hours.</p>
-      </form>
+      
 
       <!-- Success Message -->
-      <div id="successMessage" class="hidden fade-in">
-        <div class="bg-green-50 border-2 border-green-500 rounded-xl p-8 text-center">
-          <svg class="w-16 h-16 text-green-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <h3 class="text-2xl font-bold text-green-800 mb-2">Enquiry Sent</h3>
-          <p class="text-green-700 mb-4">We've received your fan photo and details. Our team will identify the fan and get back to you with a replacement quote &mdash; usually within 2-4 hours.</p>
-          <p class="text-sm text-green-600">Need it urgent? Call us on <a href="tel:01204263014" class="font-semibold underline">01204 263014</a></p>
-        </div>
-      </div>
+      
     </div>
   </section>
 
@@ -516,10 +436,7 @@
     const recsContent = document.getElementById('recsContent');
     const recsTitle = document.getElementById('recsTitle');
     const recsSubtitle = document.getElementById('recsSubtitle');
-    const enquiryForm = document.getElementById('enquiryForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const successMessage = document.getElementById('successMessage');
-
+        
     let uploadedFiles = [];
     let imageBase64s = [];
 
@@ -537,7 +454,27 @@
 
     fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
-    function handleFiles(files) {
+    
+  function compressImage(base64, maxDim, quality) {
+    maxDim = maxDim || 1200; quality = quality || 0.8;
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = base64;
+    });
+  }
+
+function handleFiles(files) {
       uploadedFiles = Array.from(files);
       imageBase64s = [];
 
@@ -551,7 +488,7 @@
 
       uploadedFiles.forEach((file, i) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
           imageBase64s.push(e.target.result);
 
           const wrapper = document.createElement('div');
@@ -641,10 +578,7 @@
       }
 
       // Populate hidden fields
-      document.getElementById('aiManufacturer').value = fields.manufacturer || '';
-      document.getElementById('aiModel').value = fields.model || '';
-      document.getElementById('aiSpecs').value = JSON.stringify(fields);
-    }
+          }
 
     function showRecommendations(recData) {
       recommendations.classList.remove('hidden');
@@ -706,42 +640,6 @@
     }
 
     // Form submission
-    enquiryForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sending...';
-
-      const formData = new FormData(enquiryForm);
-      const payload = Object.fromEntries(formData);
-      payload.images = imageBase64s;
-
-      try {
-        const response = await fetch('/api/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          enquiryForm.classList.add('hidden');
-          uploadZone.classList.add('hidden');
-          aiResult.classList.add('hidden');
-          aiError.classList.add('hidden');
-          recommendations.classList.add('hidden');
-          successMessage.classList.remove('hidden');
-        } else {
-          alert('Something went wrong. Please try again or email us directly at hello@efans.co.uk');
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = 'Get My Replacement Quote';
-        }
-      } catch (err) {
-        alert('Connection error. Please email us directly at hello@efans.co.uk with your fan photo.');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = 'Get My Replacement Quote';
-      }
-    });
-  </script>
+      </script>
 </body>
 </html>
