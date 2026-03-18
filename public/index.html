@@ -501,7 +501,7 @@ function handleFiles(files) {
 
           // Auto-identify after first image loads
           if (i === 0) {
-            identifyFan(e.target.result);
+            compressImage(e.target.result).then(function(compressed) { identifyFan(compressed); });
           }
         };
         reader.readAsDataURL(file);
