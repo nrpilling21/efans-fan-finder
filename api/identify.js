@@ -17,7 +17,7 @@ function parseSizeMm(str) {
   const mmMatch = str.match(/(\d{2,4})\s*mm/i);
   if (mmMatch) return parseInt(mmMatch[1]);
   const inchMap = { '4': 100, '5': 125, '6': 150, '7': 180, '8': 200, '9': 225, '10': 250, '12': 315, '14': 355, '16': 400, '18': 450, '20': 500 };
-  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|â³|'')/i);
+  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|Ã¢ÂÂ³|'')/i);
   if (inchMatch && inchMap[inchMatch[1]]) return inchMap[inchMatch[1]];
   return null;
 }
@@ -25,7 +25,7 @@ function parseSizeMm(str) {
 function parseAirflow(str) {
   if (!str) return null;
   str = String(str);
-  const m3hMatch = str.match(/([\d,.]+)\s*m[Â³3]\/?h/i);
+  const m3hMatch = str.match(/([\d,.]+)\s*m[ÃÂ³3]\/?h/i);
   if (m3hMatch) return parseFloat(m3hMatch[1].replace(',', ''));
   const lsMatch = str.match(/([\d,.]+)\s*l\/?s/i);
   if (lsMatch) return Math.round(parseFloat(lsMatch[1].replace(',', '')) * 3.6);
@@ -101,7 +101,7 @@ function getRecommendations(fields) {
         recommendations: exactMatches.map(p => ({
           ...p,
           match_type: 'exact',
-          match_reason: 'Direct model/SKU match â likely the same fan or its current equivalent'
+          match_reason: 'Direct model/SKU match Ã¢ÂÂ likely the same fan or its current equivalent'
         }))
       };
     }
@@ -140,7 +140,7 @@ function getRecommendations(fields) {
         recommendations: scored.map(p => ({
           ...p,
           match_type: 'similar',
-          match_reason: p.match_reasons.join(' Â· ')
+          match_reason: p.match_reasons.join(' ÃÂ· ')
         }))
       };
     }
@@ -150,9 +150,11 @@ function getRecommendations(fields) {
     match_type: 'none',
     criteria,
     recommendations: [],
-    message: "We couldn't find an automatic match, but don't worry â our team can help. Submit your enquiry and we'll find the right replacement."
+    message: "We couldn't find an automatic match, but don't worry Ã¢ÂÂ our team can help. Submit your enquiry and we'll find the right replacement."
   };
 }
+
+async function searchShopify(q) { try { const r = await fetch("https://www.efans.co.uk/search/suggest.json?q=" + encodeURIComponent(q) + "&resources[type]=product&resources[limit]=5"); if (!r.ok) return []; const d = await r.json(); return (d.resources?.results?.products || []).map(p => ({ name: p.title, url: "https://www.efans.co.uk" + p.url, price_gbp: p.price ? parseFloat(p.price) : null, in_stock: p.available, match_reason: "Found on efans.co.uk" })); } catch(e) { return []; } }
 
 // === Main Handler ===
 
@@ -212,14 +214,16 @@ Return a JSON object with these fields (use null for any field you can't determi
   "frequency": "e.g. 50Hz",
   "power": "e.g. 150W",
   "current": "e.g. 0.65A",
-  "airflow": "e.g. 500 mÂ³/h or 139 l/s",
+  "airflow": "e.g. 500 mÃÂ³/h or 139 l/s",
   "speed": "e.g. 1400 RPM",
   "ip_rating": "e.g. IP44",
   "date": "Manufacturing date if visible",
-  "notes": "Any other relevant info you can see â motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
+  "notes": "Any other relevant info you can see Ã¢ÂÂ motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
 }
 
 If the image is NOT a fan ID plate (e.g. it's a photo of the fan housing, a random object, or unclear), still try to identify the fan type and manufacturer if possible, and note this in the "notes" field.
+
+IMPORTANT: If you recognise the manufacturer and model, use your knowledge to estimate any missing specs (airflow, duct size, power, motor type). Add "estimated_specs": true if you filled in specs from knowledge rather than the plate.
 
 Return ONLY the JSON object, no other text.`
             }
@@ -245,7 +249,10 @@ Return ONLY the JSON object, no other text.`
 
         if (Object.keys(cleaned).length > 0) {
           // Get product recommendations based on identified fields
-          const recommendations = getRecommendations(cleaned);
+          let recommendations = getRecommendations(cleaned);
+
+          // Shopify fallback if no catalogue match
+          if (recommendations.match_type === "none" || !recommendations.recommendations || recommendations.recommendations.length === 0) { const sq = [cleaned.model, cleaned.part_number, cleaned.manufacturer].filter(Boolean).join(" "); if (sq) { const sr = await searchShopify(sq); if (sr.length > 0) { recommendations = { match_type: "shopify", recommendations: sr.map(function(p) { return Object.assign({}, p, {match_type: "shopify"}); }) }; } } }
 
           return res.status(200).json({
             success: true,
