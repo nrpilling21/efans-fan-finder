@@ -193,7 +193,16 @@
           <div id="aiResultContent" class="grid sm:grid-cols-2 gap-3 text-sm">
             <!-- AI results populate here -->
           </div>
-          <p class="text-xs text-gray-500 mt-4">AI-assisted reading &mdash; click a product below to view details and order.</p>
+          <div id="aiImageSection" class="mt-4 border-t border-gray-100 pt-4 hidden">
+          <div class="flex items-start gap-4">
+            <img id="aiFanImage" src="" alt="Identified fan" class="w-32 h-32 object-contain rounded-lg border border-gray-200 bg-gray-50">
+            <div>
+              <p class="text-sm font-medium text-efans-dark mb-1">Identified Fan</p>
+              <a id="aiManufLink" href="#" target="_blank" class="text-sm text-efans-accent hover:underline">View on manufacturer website &rarr;</a>
+            </div>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500 mt-4">AI-assisted reading &mdash; click a product below to view details and order.</p>
         </div>
       </div>
 
@@ -565,7 +574,8 @@ function handleFiles(files) {
         ip_rating: 'IP Rating',
         frequency: 'Frequency',
         date: 'Date',
-        notes: 'Additional Info'
+        notes: 'Additional Info',
+      manufacturer_url: 'Manufacturer Page'
       };
 
       for (const [key, label] of Object.entries(fieldMap)) {
@@ -575,6 +585,22 @@ function handleFiles(files) {
           div.innerHTML = `<span class="text-gray-500">${label}</span><span class="font-medium text-efans-dark">${fields[key]}</span>`;
           aiResultContent.appendChild(div);
         }
+    // Show fan image and manufacturer link if available
+    const imgSection = document.getElementById('aiImageSection');
+    const fanImg = document.getElementById('aiFanImage');
+    const manufLink = document.getElementById('aiManufLink');
+    if (fields.product_image_url || fields.manufacturer_url) {
+      imgSection.classList.remove('hidden');
+      if (fields.product_image_url) {
+        fanImg.src = fields.product_image_url;
+        fanImg.classList.remove('hidden');
+      } else { fanImg.classList.add('hidden'); }
+      if (fields.manufacturer_url) {
+        manufLink.href = fields.manufacturer_url;
+        manufLink.classList.remove('hidden');
+      } else { manufLink.classList.add('hidden'); }
+    }
+
       }
 
       // Populate hidden fields
