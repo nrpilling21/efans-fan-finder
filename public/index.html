@@ -619,7 +619,10 @@ function handleFiles(files) {
 
       recsFound.classList.remove('hidden');
 
-      if (recData.match_type === 'shopify') {
+      if (recData.match_type === 'cross_reference') {
+      recsTitle.textContent = 'Verified Replacement';
+      recsSubtitle.textContent = 'We stock a confirmed replacement for your fan:';
+    } else if (recData.match_type === 'shopify') {
       recsTitle.textContent = 'Products Found on eFans';
       recsSubtitle.textContent = 'We found these related products on our website:';
     } else if (recData.match_type === 'exact') {
@@ -643,7 +646,9 @@ function handleFiles(files) {
         const motorStr = product.motor_type || '';
         const specs = [sizeStr, motorStr, airflowStr].filter(Boolean).join(' &#183; ');
 
-        const matchBadge = recData.match_type === 'exact'
+        const matchBadge = recData.match_type === 'cross_reference'
+        ? '<span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Verified Replacement</span>'
+        : recData.match_type === 'exact'
           ? '<span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Direct Match</span>'
           : (product.match_type === 'shopify' ? '<span class="inline-block bg-purple-100 text-purple-800 text-xs font-medium px-2 py-0.5 rounded-full">Website Match</span>' : '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">Compatible</span>');
 
