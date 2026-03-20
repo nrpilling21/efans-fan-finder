@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fan Selector | Compare Fans from Systemair, Vent-Axia & S&P</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: { 50: '#f0f7ff', 100: '#e0effe', 300: '#a3d4fd', 500: '#3b9eff', 600: '#1a7de6', 700: '#155db0', 900: '#0e3b6e' }
+      }
+    }
+  }
+}
+</script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+  body { font-family: 'Inter', sans-serif; }
+  .spinner { border: 3px solid #e5e7eb; border-top: 3px solid #3b9eff; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<header class="bg-brand-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 py-5 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Fan Selector</h1>
+      <p class="text-brand-300 text-sm mt-0.5">Compare commercial fans from Systemair, Vent-Axia & S&amp;P</p>
+    </div>
+    <div class="text-right text-xs text-brand-300">
+      <div id="dbStats"></div>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+
+  <!-- Search Panel -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Find a fan by duty point</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+      <!-- Airflow -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Required Airflow</label>
+        <div class="flex">
+          <input type="number" id="airflow" step="0.01" min="0" placeholder="e.g. 0.5"
+                 class="flex-1 rounded-l-lg border border-gray-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none">
+          <select id="airflowUnit" class="rounded-r-lg border border-l-0 border-gray-300 px-2 py-2.5 text-sm bg-gray-50 focus:ring-2 focus:ring-brand-500 outline-none">
+            <option value="m3s">m³/s</option>
+            <option value="ls">l/s</option>
+            <option value="m3h">m³/h</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Fan Type -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Fan Type</label>
+        <select id="fanType" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <option value="">All types</option>
+          <option value="axial">Axial</option>
+          <option value="centrifugal">Centrifugal</option>
+          <option value="mixed_flow">Mixed Flow</option>
+          <option value="inline_circular">Inline Circular</option>
+          <option value="inline_rectangular">Inline Rectangular</option>
+          <option value="box">Box Fan</option>
+          <option value="roof">Roof Fan</option>
+        </select>
+      </div>
+
+      <!-- Voltage -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Electrical Supply</label>
+        <select id="voltage" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <option value="">Any</option>
+          <option value="1">Single Phase (230V)</option>
+          <option value="3">Three Phase (400V)</option>
+        </select>
+      </div>
+
+      <!-- Diameter -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Duct Size (mm)</label>
+        <select id="diameter" class="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+          <option value="">Any size</option>
+          <option value="100">100mm</option>
+          <option value="125">125mm</option>
+          <option value="150">150mm</option>
+          <option value="160">160mm</option>
+          <option value="200">200mm</option>
+          <option value="250">250mm</option>
+          <option value="315">315mm</option>
+          <option value="355">355mm</option>
+          <option value="400">400mm</option>
+          <option value="450">450mm</option>
+          <option value="500">500mm</option>
+          <option value="560">560mm</option>
+          <option value="630">630mm</option>
+          <option value="710">710mm</option>
+          <option value="800">800mm</option>
+          <option value="900">900mm</option>
+          <option value="1000">1000mm</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Manufacturer filter + Search -->
+    <div class="flex flex-wrap items-center gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-500">Manufacturers:</span>
+        <label class="flex items-center gap-1.5 text-sm"><input type="checkbox" class="mfr-check rounded" value="Systemair" checked> Systemair</label>
+        <label class="flex items-center gap-1.5 text-sm"><input type="checkbox" class="mfr-check rounded" value="Vent-Axia" checked> Vent-Axia</label>
+        <label class="flex items-center gap-1.5 text-sm"><input type="checkbox" class="mfr-check rounded" value="S&P" checked> S&amp;P</label>
+      </div>
+      <div class="flex-1"></div>
+      <button onclick="search()" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+        Search Fans
+      </button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="loading" class="hidden flex items-center justify-center py-12">
+    <div class="spinner mr-3"></div>
+    <span class="text-gray-500">Searching fans...</span>
+  </div>
+
+  <div id="resultsInfo" class="hidden mb-4">
+    <p class="text-sm text-gray-500"><span id="resultCount"></span> fans found <span id="resultFilter"></span></p>
+  </div>
+
+  <div id="results" class="space-y-3"></div>
+
+  <div id="noResults" class="hidden text-center py-16">
+    <svg class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    <p class="mt-3 text-gray-500">No fans match your criteria. Try relaxing your filters.</p>
+  </div>
+
+  <!-- Initial state -->
+  <div id="initialState" class="text-center py-16">
+    <svg class="mx-auto h-16 w-16 text-brand-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+    <p class="mt-4 text-gray-600 text-lg">Enter your requirements above to find matching fans</p>
+    <p class="mt-1 text-gray-400 text-sm">Search across 892 products from 3 manufacturers</p>
+  </div>
+
+</main>
+
+<script>
+const SUPABASE_URL = 'https://zzcqfrtwiikyixvegtwt.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6Y3FmcnR3aWlreWl4dmVndHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2MDU3NjQsImV4cCI6MjA4OTE4MTc2NH0.WKWRYLzqzUh1OurBnyOtbjXgyc8S_nYy4MyRY1gpXcM';
+
+// Manufacturer ID to name mapping (avoids join issues)
+const MFR_MAP = { 2: 'Systemair', 3: 'Vent-Axia', 4: 'S&P' };
+
+async function supabaseQuery(table, params = '') {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`API ${res.status}: ${errText}`);
+    }
+    return res.json();
+  } catch (err) {
+    console.error('Supabase query failed:', err);
+    throw err;
+  }
+}
+
+// Load stats on page load
+async function loadStats() {
+  try {
+    const data = await supabaseQuery('fan_products', 'select=id&active=eq.true');
+    document.getElementById('dbStats').innerHTML = `${data.length} fans in database`;
+  } catch(e) {
+    document.getElementById('dbStats').innerHTML = `<span class="text-red-300">DB error: ${e.message}</span>`;
+  }
+}
+loadStats();
+
+// Convert airflow to m³/s
+function toM3s(value, unit) {
+  if (unit === 'ls') return value / 1000;
+  if (unit === 'm3h') return value / 3600;
+  return value;
+}
+
+async function search() {
+  const airflowRaw = parseFloat(document.getElementById('airflow').value);
+  const airflowUnit = document.getElementById('airflowUnit').value;
+  const fanType = document.getElementById('fanType').value;
+  const voltage = document.getElementById('voltage').value;
+  const diameter = document.getElementById('diameter').value;
+  const manufacturers = [...document.querySelectorAll('.mfr-check:checked')].map(c => c.value);
+
+  document.getElementById('initialState').classList.add('hidden');
+  document.getElementById('noResults').classList.add('hidden');
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('resultsInfo').classList.add('hidden');
+  document.getElementById('loading').classList.remove('hidden');
+
+  // Build query
+  let params = 'select=*&active=eq.true&order=max_airflow_m3s.asc.nullslast';
+
+  if (!isNaN(airflowRaw) && airflowRaw > 0) {
+    const m3s = toM3s(airflowRaw, airflowUnit);
+    // Find fans where max airflow >= required airflow (with 20% margin)
+    params += `&max_airflow_m3s=gte.${(m3s * 0.8).toFixed(4)}`;
+  }
+
+  if (fanType) params += `&fan_type=eq.${fanType}`;
+  if (voltage) params += `&phases=eq.${voltage}`;
+  if (diameter) params += `&diameter_mm=eq.${diameter}`;
+
+  // Manufacturer filter via manufacturer name
+  if (manufacturers.length > 0 && manufacturers.length < 3) {
+    // We need to filter by manufacturer - use manufacturer_id
+    const mfrMap = { 'Systemair': 2, 'Vent-Axia': 3, 'S&P': 4 };
+    const ids = manufacturers.map(m => mfrMap[m]).filter(Boolean);
+    params += `&manufacturer_id=in.(${ids.join(',')})`;
+  }
+
+  params += '&limit=100';
+
+  try {
+    const data = await supabaseQuery('fan_products', params);
+    document.getElementById('loading').classList.add('hidden');
+
+    if (data.length === 0) {
+      document.getElementById('noResults').classList.remove('hidden');
+      return;
+    }
+
+    // Sort: prioritise products with most complete data
+    data.sort((a, b) => {
+      const scoreA = (a.max_airflow_m3s ? 1 : 0) + (a.power_watts ? 1 : 0) + (a.noise_dba ? 1 : 0);
+      const scoreB = (b.max_airflow_m3s ? 1 : 0) + (b.power_watts ? 1 : 0) + (b.noise_dba ? 1 : 0);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return (a.max_airflow_m3s || 999) - (b.max_airflow_m3s || 999);
+    });
+
+    document.getElementById('resultsInfo').classList.remove('hidden');
+    document.getElementById('resultCount').textContent = data.length;
+
+    let filterDesc = '';
+    if (!isNaN(airflowRaw) && airflowRaw > 0) filterDesc += ` for ${airflowRaw} ${airflowUnit === 'ls' ? 'l/s' : airflowUnit === 'm3h' ? 'm³/h' : 'm³/s'}`;
+    if (fanType) filterDesc += `, ${fanType.replace('_', ' ')}`;
+    if (diameter) filterDesc += `, ${diameter}mm`;
+    document.getElementById('resultFilter').textContent = filterDesc;
+
+    const resultsDiv = document.getElementById('results');
+
+    // Group by manufacturer for visual clarity
+    const mfrColors = { 'Systemair': 'blue', 'Vent-Axia': 'emerald', 'S&P': 'orange' };
+
+    data.forEach(fan => {
+      const mfr = MFR_MAP[fan.manufacturer_id] || 'Unknown';
+      const color = mfrColors[mfr] || 'gray';
+
+      const card = document.createElement('div');
+      card.className = 'bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow';
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-${color}-100 text-${color}-800">${mfr}</span>
+              <span class="text-xs text-gray-400">${fan.product_range || ''}</span>
+            </div>
+            <h3 class="text-base font-semibold text-gray-900 truncate">${fan.model_name}</h3>
+            <p class="text-sm text-gray-500 mt-0.5">${fan.description || ''}</p>
+          </div>
+          <div class="flex-shrink-0 text-right">
+            ${fan.diameter_mm ? `<div class="text-lg font-bold text-gray-800">&empty;${fan.diameter_mm}mm</div>` : ''}
+            <div class="text-xs text-gray-400">${fan.fan_type?.replace('_', ' ') || ''}</div>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          ${specBadge('Airflow', fan.max_airflow_m3s ? `${fan.max_airflow_m3s} m³/s` : null, fan.max_airflow_m3s ? `${Math.round(fan.max_airflow_m3s * 1000)} l/s` : null)}
+          ${specBadge('Power', fan.power_watts ? formatPower(fan.power_watts) : null)}
+          ${specBadge('Noise', fan.noise_dba ? `${fan.noise_dba} dB(A)` : null)}
+          ${specBadge('Supply', fan.voltage ? `${fan.voltage}V ${fan.phases}ph` : null)}
+          ${specBadge('Weight', fan.weight_kg ? `${fan.weight_kg} kg` : null)}
+          ${specBadge('Speed', fan.speed_rpm ? `${fan.speed_rpm} rpm` : null)}
+        </div>
+      `;
+      resultsDiv.appendChild(card);
+    });
+  } catch (err) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('results').innerHTML = `
+      <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <p class="text-red-700 font-medium">Search failed</p>
+        <p class="text-red-500 text-sm mt-1">${err.message}</p>
+        <p class="text-gray-400 text-xs mt-3">If opening from a local file, try hosting it on a web server instead (CORS restriction).</p>
+      </div>`;
+  }
+}
+
+function specBadge(label, value, subtitle) {
+  if (!value) return `<div class="bg-gray-50 rounded-lg px-3 py-2"><div class="text-xs text-gray-400">${label}</div><div class="text-sm text-gray-300">-</div></div>`;
+  return `<div class="bg-gray-50 rounded-lg px-3 py-2"><div class="text-xs text-gray-500">${label}</div><div class="text-sm font-medium text-gray-800">${value}</div>${subtitle ? `<div class="text-xs text-gray-400">${subtitle}</div>` : ''}</div>`;
+}
+
+function formatPower(watts) {
+  if (watts >= 1000) return `${(watts / 1000).toFixed(1)} kW`;
+  return `${Math.round(watts)} W`;
+}
+
+// Allow Enter key to search
+document.getElementById('airflow').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+</script>
+</body>
+</html>
