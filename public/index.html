@@ -289,7 +289,7 @@
         </div>
       </div>
       <div class="bg-panel p-6 mt-8">
-        <p class="text-sm text-gray-700"><span class="text-black font-medium">Plate worn or missing?</span> Send us a photo of the fan itself, the duct size and where it's installed. We can usually work it out.</p>
+        <p class="text-sm text-gray-700"><span class="text-black font-medium">Plate worn or missing?</span> Type the model instead, or send us a photo of the fan itself, the duct size and where it's installed. We can usually work it out.</p>
       </div>
     </section>
 
@@ -310,12 +310,8 @@
             <p class="text-sm text-gray-600 mt-3">That's the most common requirement. Send us the duct diameter and the airflow duty &mdash; we'll spec a fan that fits the existing installation.</p>
           </details>
           <details class="py-5">
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">Can you supply the same brand, or do I need to switch?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">We stock all the major brands &mdash; Vent-Axia, Systemair, S&amp;P, Elta, Greenwood, Nuaire, Xpelair, and more. If the original brand is available, we'll quote it. If not, we'll recommend the closest equivalent.</p>
-          </details>
-          <details class="py-5">
             <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">What if the ID plate is missing or unreadable?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">Send us whatever you've got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans. We can usually work it out from the housing shape, motor type, and application.</p>
+            <p class="text-sm text-gray-600 mt-3">Type the model from a quote or invoice, or send us whatever you've got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans.</p>
           </details>
         </div>
       </div>
@@ -326,10 +322,6 @@
           <details class="py-5">
             <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">How quickly can you get the replacement to me?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
             <p class="text-sm text-gray-600 mt-3">If we stock the replacement or equivalent, it's next-day delivery. For non-stock items or specialist orders, we'll give you an honest lead time.</p>
-          </details>
-          <details class="py-5">
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">How do I know what size extractor fan I need?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">It depends on the room volume and the required air change rate. For bathrooms, Building Regs require 15 l/s (54 m&sup3;/h). For commercial kitchens, you might need 20-30 air changes per hour. Send us the room dimensions and use &mdash; we'll calculate it for you.</p>
           </details>
           <details class="py-5">
             <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">I need to replace 20+ fans across a building. Can you help?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
@@ -359,9 +351,6 @@
     const aiResult = $('aiResult'), aiResultContent = $('aiResultContent'), aiLoading = $('aiLoading'), aiError = $('aiError');
     const recommendations = $('recommendations'), recsFound = $('recsFound'), recsNone = $('recsNone'), recsContent = $('recsContent');
     const recsTitle = $('recsTitle'), recsSubtitle = $('recsSubtitle'), recsEyebrow = $('recsEyebrow'), placeholder = $('resultsPlaceholder');
-
-    let uploadedFiles = [];
-    let imageBase64s = [];
 
     uploadZone.addEventListener('click', () => fileInput.click());
     uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
@@ -395,21 +384,19 @@
     }
 
     function handleFiles(files) {
-      uploadedFiles = Array.from(files);
-      imageBase64s = [];
+      const list = Array.from(files);
       uploadPrompt.classList.add('hidden');
       uploadPreview.classList.remove('hidden');
       uploadPreview.innerHTML = '';
       const row = el('div', 'flex flex-wrap gap-3 justify-center');
 
-      uploadedFiles.forEach((file, i) => {
+      list.forEach((file, i) => {
         const reader = new FileReader();
         reader.onload = e => {
-          imageBase64s.push(e.target.result);
-          const img = el('img', 'w-24 h-24 object-cover border border-gray-200 bg-white');
-          img.src = e.target.result;
-          row.appendChild(img);
-          if (i === 0) compressImage(e.target.result).then(img => identifyFan({ image: img }));
+          const thumb = el('img', 'w-24 h-24 object-cover border border-gray-200 bg-white');
+          thumb.src = e.target.result;
+          row.insertBefore(thumb, addMore);
+          if (i === 0) compressImage(e.target.result).then(image => identifyFan({ image }));
         };
         reader.readAsDataURL(file);
       });
@@ -418,8 +405,8 @@
       addMore.type = 'button';
       addMore.setAttribute('aria-label', 'Add another photo');
       addMore.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
-      uploadPreview.appendChild(row);
       row.appendChild(addMore);
+      uploadPreview.appendChild(row);
     }
 
     $('typedForm').addEventListener('submit', e => {
