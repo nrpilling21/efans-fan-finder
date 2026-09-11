@@ -370,7 +370,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6', // claude-sonnet-4-20250514 was retired on 15 June 2026
         max_tokens: 1024,
         messages: [{
           role: 'user',
@@ -481,6 +481,7 @@ Return ONLY the JSON object, no other text.`
       }
     }
 
+    console.error('Anthropic API error:', response.status, JSON.stringify(data).slice(0, 500));
     return res.status(200).json({ success: false, error: 'No response from AI' });
 
   } catch (err) {
