@@ -36,7 +36,9 @@ for (const p of products) {
 function findEltaModel(fields) {
   if (!eltaModels.length) return null;
   const mentionsElta = /elta|fantech/i.test([fields.manufacturer, fields.notes].filter(Boolean).join(' '));
-  for (const raw of [fields.model, fields.part_number]) {
+  // Try the model, the part number, then each word of the model (typed text like "Elta SCP630/4-1")
+  const words = String(fields.model || '').split(/\s+/).filter(w => /\d/.test(w));
+  for (const raw of [fields.model, fields.part_number, ...words]) {
     const key = normModel(raw);
     if (key.length < 4) continue;
     if (eltaByKey.has(key)) return eltaByKey.get(key);
@@ -102,11 +104,6 @@ function applyEltaData(fields, elta) {
   return fields;
 }
 
-const CATEGORY_MAP = {
-  'inline-duct-fan': 'Duct Fans', 'mixed-flow-fan': 'Duct Fans', 'plate-axial-fan': 'Axial Fan',
-  'axial-fan': 'Axial Fan', 'roof-fan': 'Roof Fans', 'bathroom-extractor': 'Ventilation Fans'
-};
-
 // === Recommendation Logic (inline to avoid module issues on Vercel) ===
 
 function parseSizeMm(str) {
@@ -168,6 +165,49 @@ function extractSizeFromModel(model) {
   return null;
 }
 
+// === Fan type: "if it's a plate fan, only show plate fans" ===
+// Catalogue products carry a Type_ tag from Shopify; a few don't, so fall back to the name.
+const TYPE_GROUP = { 'Long Cased Axial': 'Cased Axial', 'Twin Fan': 'Box Fan' };
+function productType(p) {
+  if (p._type !== undefined) return p._type;
+  const tag = (p.tags || []).find(t => t.startsWith('Type_') && t !== 'Type_EC Fans');
+  let t = tag ? tag.slice(5) : null;
+  if (!t) {
+    const n = (p.name || '').toLowerCase();
+    t = /plate/.test(n) ? 'Plate Axial' : /cased/.test(n) ? 'Cased Axial' : /roof/.test(n) ? 'Roof Fan'
+      : /box/.test(n) ? 'Box Fan' : /inline|in-line|duct fan/.test(n) ? 'Duct Fan' : null;
+  }
+  p._type = t ? (TYPE_GROUP[t] || t) : null;
+  return p._type;
+}
+
+// The identified fan's type, in the same terms as the catalogue
+function identifiedType(fields, elta) {
+  if (elta) {
+    const f = elta.family || '';
+    if (/roof/i.test(f)) return 'Roof Fan';
+    if (/plate/i.test(f)) return 'Plate Axial';
+    if (/duct|cased|contra|bifurcated/i.test(f) && /axial/i.test(f)) return 'Cased Axial';
+    if (/box/i.test(f)) return 'Box Fan';
+    if (/inline|multiflow|jetflow|sel |sem /i.test(f + ' ')) return 'Duct Fan';
+    if (/mvhr/i.test(f)) return 'Whole House';
+    if (/supply & extract/i.test(f)) return 'Single Room';
+    if (/piv/i.test(f)) return 'PIV';
+    if (/wall fan/i.test(f)) return 'Axial Fan';
+    return null;
+  }
+  const ft = String(fields.fan_type || '').toLowerCase();
+  if (/plate/.test(ft)) return 'Plate Axial';
+  if (/cased|duct axial/.test(ft)) return 'Cased Axial';
+  if (/roof/.test(ft)) return 'Roof Fan';
+  if (/box|twin/.test(ft)) return 'Box Fan';
+  if (/inline|duct|mixed/.test(ft)) return 'Duct Fan';
+  if (/mvhr|heat recovery/.test(ft)) return 'Whole House';
+  if (/piv|positive input/.test(ft)) return 'PIV';
+  const slug = inferCategory(fields);
+  return { 'plate-axial-fan': 'Plate Axial', 'inline-duct-fan': 'Duct Fan', 'mixed-flow-fan': 'Duct Fan', 'roof-fan': 'Roof Fan' }[slug] || null;
+}
+
 function getRecommendations(fields, elta) {
   if (!products.length) return { match_type: 'none', recommendations: [], message: "Product catalogue not loaded." };
 
@@ -176,134 +216,103 @@ function getRecommendations(fields, elta) {
              extractSizeFromModel(fields.model) || extractSizeFromModel(fields.part_number),
     airflow_m3h: parseAirflow(fields.airflow) || parseFloat(fields.estimated_airflow_m3h) || null,
     motor_type: (elta && elta.motor_type) || parseMotorType(fields),
-    category: (elta && elta.category) || CATEGORY_MAP[inferCategory(fields)] || null,
+    type: identifiedType(fields, elta),
     brand: fields.manufacturer || null
   };
 
-  // === Cross-reference tag matching (Replaces_MODEL) ===
-    const identifiedModel = (fields.model || '').replace(/[\s-]/g, '').toUpperCase();
-    const identifiedPart = (fields.part_number || '').replace(/[\s-]/g, '').toUpperCase();
-    if (identifiedModel || identifiedPart) {
-      const crossRefMatches = products.filter(p => {
-        if (!p.tags) return false;
-        const tags = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',').map(t => t.trim()) : []);
-        return tags.some(tag => {
-          const t = tag.replace(/^Replaces_/i, '').replace(/[\s-]/g, '').toUpperCase();
-          if (tag.toLowerCase().startsWith('replaces_')) {
-            return (identifiedModel && t === identifiedModel) || (identifiedPart && t === identifiedPart);
-          }
-          return false;
-        });
+  // === Cross-reference tag matching (Replaces_MODEL) — hand-curated, so shown as-is ===
+  const identifiedModel = (fields.model || '').replace(/[\s-]/g, '').toUpperCase();
+  const identifiedPart = (fields.part_number || '').replace(/[\s-]/g, '').toUpperCase();
+  if (identifiedModel || identifiedPart) {
+    const crossRefMatches = products.filter(p => {
+      const tags = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',').map(t => t.trim()) : []);
+      return tags.some(tag => {
+        if (!tag.toLowerCase().startsWith('replaces_')) return false;
+        const t = tag.replace(/^Replaces_/i, '').replace(/[\s-]/g, '').toUpperCase();
+        return (identifiedModel && t === identifiedModel) || (identifiedPart && t === identifiedPart);
       });
-      if (crossRefMatches.length > 0) {
-        return {
-          match_type: 'cross_reference',
-          criteria,
-          recommendations: crossRefMatches.map(p => ({
-            ...p,
-            match_type: 'cross_reference',
-            match_reason: 'Verified replacement for ' + (fields.manufacturer || '') + ' ' + (fields.model || '')
-          }))
-        };
-      }
-    }
-
-    // === Superseded Elta model -> current Elta equivalent we stock ===
-    if (elta && !elta.current) {
-      const equivalents = eltaEquivalents(elta);
-      const stocked = [];
-      for (const eq of equivalents) {
-        const p = products.find(p => p.in_stock && normModel(p.sku) === eq.key);
-        if (p && !stocked.includes(p)) stocked.push({ ...p, eq });
-        if (stocked.length >= 3) break;
-      }
-      if (stocked.length > 0) {
-        return {
-          match_type: 'elta_equivalent',
-          criteria,
-          recommendations: stocked.map(({ eq, ...p }) => ({
-            ...p,
-            match_type: 'elta_equivalent',
-            match_reason: 'Current Elta equivalent of ' + elta.model +
-              (eq.airflow_m3h && elta.airflow_m3h ? ' \u2014 ' + eq.airflow_m3h + ' m\u00b3/h vs ' + elta.airflow_m3h + ' m\u00b3/h' : '')
-          }))
-        };
-      }
-    }
-
-    // Exact model/SKU match
-  const model = (fields.model || '').toLowerCase().replace(/[\s-]/g, '');
-  const partNum = (fields.part_number || '').toLowerCase().replace(/[\s-]/g, '');
-
-  if (model || partNum) {
-    const exactMatches = products.filter(p => {
-      const pSku = p.sku.toLowerCase().replace(/[\s-]/g, '');
-      const pName = p.name.toLowerCase().replace(/[\s-]/g, '');
-      return (model && (pSku.includes(model) || pName.includes(model) || model.includes(pSku))) ||
-             (partNum && (pSku.includes(partNum) || pName.includes(partNum) || partNum.includes(pSku)));
-    }).filter(p => p.in_stock).slice(0, 3);
-
-    if (exactMatches.length > 0) {
+    });
+    if (crossRefMatches.length > 0) {
       return {
-        match_type: 'exact',
+        match_type: 'cross_reference',
         criteria,
-        recommendations: exactMatches.map(p => ({
-          ...p,
-          match_type: 'exact',
-          match_reason: 'Direct model/SKU match — likely the same fan or its current equivalent'
+        recommendations: crossRefMatches.map((p, i) => ({
+          ...p, match_type: 'cross_reference', highlight: i === 0 ? 'Verified replacement' : null,
+          match_reason: 'Verified replacement for ' + (fields.manufacturer || '') + ' ' + (fields.model || '')
         }))
       };
     }
   }
 
-  // Score-based matching
+  const inStock = products.filter(p => p.in_stock);
+  const sameType = p => !criteria.type || productType(p) === criteria.type;
+  const list = [];
+  const listed = p => list.some(x => x.sku === p.sku);
+
+  // 1. Exact match: the same model number (ignoring spaces, dashes and slashes)
+  const keys = [fields.model, fields.part_number, elta && elta.model].map(normModel).filter(k => k.length >= 4);
+  // Also accept the model appearing as whole words in the product name (e.g. "Systemair K 200 M ...")
+  const nameRes = [fields.model].filter(m => m && normModel(m).length >= 4).map(m => new RegExp('\\b' +
+    m.trim().split(/[\s\-\/]+/).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s\\-/]*') + '\\b', 'i'));
+  const exact = inStock.find(p => keys.includes(normModel(p.sku))) ||
+    inStock.find(p => nameRes.some(re => re.test(p.name)) && (!criteria.type || productType(p) === criteria.type));
+  if (exact) {
+    list.push({ ...exact, match_type: 'exact', highlight: 'Exact match',
+      match_reason: 'Same model as your plate (' + (fields.model || fields.part_number) + ')' });
+  }
+
+  // 2. Superseded Elta model: its current equivalent(s) we stock, same fan type only
+  let matchType = exact ? 'exact' : null;
+  if (!exact && elta && !elta.current) {
+    for (const eq of eltaEquivalents(elta)) {
+      const p = inStock.find(p => normModel(p.sku) === eq.key);
+      if (!p || listed(p) || !sameType(p)) continue;
+      list.push({ ...p, match_type: 'elta_equivalent', highlight: list.length === 0 ? 'Direct replacement' : null,
+        match_reason: 'Current Elta equivalent of ' + elta.model +
+          (eq.airflow_m3h && elta.airflow_m3h ? ' — ' + eq.airflow_m3h + ' m³/h vs ' + elta.airflow_m3h + ' m³/h' : '') });
+      if (list.length >= 2) break;
+    }
+    if (list.length) matchType = 'elta_equivalent';
+  }
+
+  // 3. Alternatives of the same fan type, ranked by size, airflow, motor and brand
   if (criteria.size_mm) {
-    const scored = products.filter(p => p.in_stock).map(p => {
+    const loose = [fields.model, fields.part_number].map(s => (s || '').toLowerCase().replace(/[\s-]/g, '')).filter(s => s.length >= 4);
+    const scored = inStock.filter(p => !listed(p) && sameType(p)).map(p => {
       let score = 0;
       const reasons = [];
-
-      if (p.size_mm === criteria.size_mm) { score += 50; reasons.push('Exact size match'); }
-      else if (Math.abs(p.size_mm - criteria.size_mm) <= 25) { score += 20; reasons.push('Close size match'); }
-
+      const pSku = p.sku.toLowerCase().replace(/[\s-]/g, ''), pName = p.name.toLowerCase().replace(/[\s-]/g, '');
+      if (loose.some(m => pSku.includes(m) || pName.includes(m) || m.includes(pSku))) { score += 40; reasons.push('Same model family'); }
+      if (p.size_mm === criteria.size_mm) { score += 50; reasons.push('Same size'); }
+      else if (Math.abs(p.size_mm - criteria.size_mm) <= 25) { score += 20; reasons.push('Close size'); }
       if (criteria.airflow_m3h && p.airflow_m3h) {
         const ratio = p.airflow_m3h / criteria.airflow_m3h;
         if (ratio >= 0.8 && ratio <= 1.2) { score += 30; reasons.push('Similar airflow'); }
         else if (ratio >= 0.6 && ratio <= 1.4) { score += 15; reasons.push('Comparable airflow'); }
       }
-
       if (criteria.motor_type && p.motor_type === criteria.motor_type) { score += 20; reasons.push('Same motor type'); }
-      if (criteria.category && p.category === criteria.category) { score += 15; reasons.push('Same fan type'); }
       if (elta && elta.phase && p.phase === elta.phase) { score += 10; reasons.push(elta.phase === 1 ? 'Single phase' : 'Three phase'); }
       if (criteria.brand && p.brand && p.brand.toLowerCase() === criteria.brand.toLowerCase()) { score += 10; reasons.push('Same brand'); }
-      if (p.in_stock) { score += 5; }
-
+      if (criteria.type) reasons.unshift(criteria.type);
       return { ...p, match_score: score, match_reasons: reasons };
     })
-    .filter(p => p.match_score >= 30)
-    // Elta data tells us the fan type for certain, so don't offer a duct fan for a roof fan
-    .filter(p => !(elta && elta.category) || p.category === elta.category)
+    .filter(p => p.match_score >= 50)
     .sort((a, b) => b.match_score - a.match_score)
-    .slice(0, 5);
+    .slice(0, Math.max(0, 4 - list.length));
 
-    if (scored.length > 0) {
-      return {
-        match_type: 'similar',
-        criteria,
-        recommendations: scored.map(p => ({
-          ...p,
-          match_type: 'similar',
-          match_reason: p.match_reasons.join(' · ')
-        }))
-      };
-    }
+    for (const p of scored) list.push({ ...p, match_type: 'similar', match_reason: p.match_reasons.join(' · ') });
+    if (!matchType && scored.length) matchType = 'similar';
   }
 
-  return {
-    match_type: 'none',
-    criteria,
-    recommendations: [],
-    message: "We couldn't find an automatic match, but don't worry — our team can help. Submit your enquiry and we'll find the right replacement."
-  };
+  if (!list.length) {
+    return {
+      match_type: 'none',
+      criteria,
+      recommendations: [],
+      message: "We couldn't find an automatic match, but don't worry — our team can help."
+    };
+  }
+  return { match_type: matchType, criteria, recommendations: list };
 }
 
 async function searchShopify(fields) {
@@ -348,9 +357,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Either a photo of the ID plate, or the fan typed in (not every enquiry comes with a photo)
   const { image } = req.body;
-  if (!image) {
-    return res.status(400).json({ error: 'No image provided' });
+  const typed = typeof req.body.text === 'string' ? req.body.text.trim().slice(0, 300) : '';
+  if (!image && !typed) {
+    return res.status(400).json({ error: 'Provide a photo or type the fan model' });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -358,36 +369,24 @@ export default async function handler(req, res) {
     return res.status(500).json({ success: false, error: 'API key not configured' });
   }
 
-  const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-  const mediaType = image.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg';
+  const intro = image
+    ? 'Examine this photo of a fan ID plate / data plate / nameplate and extract as much information as possible.'
+    : 'A customer has typed this description of their fan. It may be a model number, a part number, a brand, or a rough description:\n\n"' +
+      typed.replace(/"/g, "'") + '"\n\nIdentify the fan and fill in as much as you can. Keep "model" exactly as the customer typed the model code.';
+  const content = [];
+  if (image) {
+    content.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: image.match(/^data:(image\/\w+);/)?.[1] || 'image/jpeg',
+        data: image.replace(/^data:image\/\w+;base64,/, '')
+      }
+    });
+  }
+  content.push({ type: 'text', text: `You are a ventilation equipment expert working for eFans Direct, a UK trade supplier of extractor fans, MVHR units, and ventilation equipment.
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6', // claude-sonnet-4-20250514 was retired on 15 June 2026
-        max_tokens: 1024,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: mediaType,
-                data: base64Data
-              }
-            },
-            {
-              type: 'text',
-              text: `You are a ventilation equipment expert working for eFans Direct, a UK trade supplier of extractor fans, MVHR units, and ventilation equipment.
-
-Examine this photo of a fan ID plate / data plate / nameplate and extract as much information as possible.
+${intro}
 
 Return a JSON object with these fields (use null for any field you can't determine):
 
@@ -403,6 +402,7 @@ Return a JSON object with these fields (use null for any field you can't determi
   "speed": "e.g. 1400 RPM",
   "ip_rating": "e.g. IP44",
   "date": "Manufacturing date if visible",
+  "fan_type": "One of: plate axial, cased axial, inline duct, box, roof, wall/window axial, bathroom extractor, MVHR, PIV, unknown",
   "notes": "Any other relevant info you can see — motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
 }
 
@@ -419,70 +419,76 @@ Always provide these even if approximate - they are essential for finding a repl
 6. Add "manufacturer_url" with a likely URL for this product on the manufacturer website (e.g. nuaire.co.uk, vent-axia.com, systemair.com etc). Use your knowledge of these sites.
 7. Add "product_image_url" if you know a direct image URL for this product from your training data.
 
-Return ONLY the JSON object, no other text.`
-            }
-          ]
-        }]
+Return ONLY the JSON object, no other text.` });
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6', // claude-sonnet-4-20250514 was retired on 15 June 2026
+        max_tokens: 1024,
+        messages: [{ role: 'user', content }]
       })
     });
 
     const data = await response.json();
+    let cleaned = null;
 
     if (data.content && data.content[0] && data.content[0].text) {
-      let text = data.content[0].text.trim();
-      text = text.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-
+      const text = data.content[0].text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
       try {
         const fields = JSON.parse(text);
-        const cleaned = {};
+        cleaned = {};
         for (const [k, v] of Object.entries(fields)) {
-          if (v !== null && v !== '' && v !== 'null' && v !== 'N/A') {
-            cleaned[k] = v;
-          }
-        }
-
-        if (Object.keys(cleaned).length > 0) {
-          // Get product recommendations based on identified fields
-          // Enrich fields with AI estimates for better matching
-          if (cleaned.size_mm && !cleaned.airflow) {
-            cleaned.airflow = cleaned.estimated_airflow_m3h ? cleaned.estimated_airflow_m3h + ' m3/h' : null;
-          }
-          if (cleaned.estimated_airflow_m3h && !cleaned.airflow) {
-            cleaned.airflow = cleaned.estimated_airflow_m3h + ' m3/h';
-          }
-          // Swap AI guesses for Elta's own data when we recognise the model
-          const elta = findEltaModel(cleaned);
-          if (elta) {
-            applyEltaData(cleaned, elta);
-            if (!elta.current) {
-              const eq = eltaEquivalents(elta)[0];
-              if (eq) cleaned.current_equivalent = eq.model;
-            }
-          }
-          let recommendations = getRecommendations(cleaned, elta);
-
-          // Shopify fallback if no catalogue match
-          if (recommendations.match_type === "none" || !recommendations.recommendations || recommendations.recommendations.length === 0) { const sq = [cleaned.model, cleaned.part_number, cleaned.manufacturer].filter(Boolean).join(" "); if (sq) { const sr = await searchShopify(sq); if (sr.length > 0) { recommendations = { match_type: "shopify", recommendations: sr.map(function(p) { return Object.assign({}, p, {match_type: "shopify"}); }) }; } } }
-
-          return res.status(200).json({
-            success: true,
-            fields: cleaned,
-            recommendations: recommendations
-          });
-        } else {
-          return res.status(200).json({
-            success: false,
-            error: 'Could not extract any information',
-            recommendations: { match_type: 'none', recommendations: [] }
-          });
+          if (v !== null && v !== '' && v !== 'null' && v !== 'N/A') cleaned[k] = v;
         }
       } catch (parseErr) {
-        return res.status(200).json({ success: false, error: 'Could not parse AI response' });
+        if (!typed) return res.status(200).json({ success: false, error: 'Could not parse AI response' });
+      }
+    } else {
+      console.error('Anthropic API error:', response.status, JSON.stringify(data).slice(0, 500));
+    }
+
+    // If the AI couldn't help with typed text, still try the text as a model code
+    if ((!cleaned || !Object.keys(cleaned).length) && typed) cleaned = { model: typed };
+    if (!cleaned) return res.status(200).json({ success: false, error: 'No response from AI' });
+    if (!Object.keys(cleaned).length) {
+      return res.status(200).json({
+        success: false,
+        error: 'Could not extract any information',
+        recommendations: { match_type: 'none', recommendations: [] }
+      });
+    }
+
+    // Enrich fields with AI estimates for better matching
+    if (cleaned.estimated_airflow_m3h && !cleaned.airflow) {
+      cleaned.airflow = cleaned.estimated_airflow_m3h + ' m3/h';
+    }
+    // Swap AI guesses for Elta's own data when we recognise the model
+    const elta = findEltaModel(cleaned);
+    if (elta) {
+      applyEltaData(cleaned, elta);
+      if (!elta.current) {
+        const eq = eltaEquivalents(elta)[0];
+        if (eq) cleaned.current_equivalent = eq.model;
+      }
+    }
+    let recommendations = getRecommendations(cleaned, elta);
+
+    // Website search if nothing in the catalogue matched
+    if (!recommendations.recommendations || recommendations.recommendations.length === 0) {
+      if (cleaned.model || cleaned.part_number || cleaned.manufacturer) {
+        const sr = await searchShopify(cleaned);
+        if (sr.length > 0) recommendations = { match_type: 'shopify', recommendations: sr.map(p => ({ ...p, match_type: 'shopify' })) };
       }
     }
 
-    console.error('Anthropic API error:', response.status, JSON.stringify(data).slice(0, 500));
-    return res.status(200).json({ success: false, error: 'No response from AI' });
+    return res.status(200).json({ success: true, source: image ? 'photo' : 'typed', fields: cleaned, recommendations });
 
   } catch (err) {
     console.error('AI identification error:', err);
