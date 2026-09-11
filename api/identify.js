@@ -258,7 +258,7 @@ function getRecommendations(fields, elta) {
     inStock.find(p => nameRes.some(re => re.test(p.name)) && (!criteria.type || productType(p) === criteria.type));
   if (exact) {
     list.push({ ...exact, match_type: 'exact', highlight: 'Exact match',
-      match_reason: 'Same model as your plate (' + (fields.model || fields.part_number) + ')' });
+      match_reason: 'Same model: ' + (fields.model || fields.part_number) });
   }
 
   // 2. Superseded Elta model: its current equivalent(s) we stock, same fan type only
