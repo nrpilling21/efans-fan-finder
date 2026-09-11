@@ -565,16 +565,19 @@ function handleFiles(files) {
       const fieldMap = {
         manufacturer: 'Manufacturer',
         model: 'Model',
+        range: 'Range',
         part_number: 'Part / SKU',
         voltage: 'Voltage',
         power: 'Power',
         current: 'Current',
         airflow: 'Airflow',
+        max_pressure: 'Max Pressure',
         speed: 'Speed (RPM)',
         ip_rating: 'IP Rating',
         frequency: 'Frequency',
         date: 'Date',
         notes: 'Additional Info',
+        current_equivalent: 'Current Equivalent',
       manufacturer_url: 'Manufacturer Page'
       };
 
@@ -619,7 +622,10 @@ function handleFiles(files) {
 
       recsFound.classList.remove('hidden');
 
-      if (recData.match_type === 'cross_reference') {
+      if (recData.match_type === 'elta_equivalent') {
+      recsTitle.textContent = 'Current Elta Equivalent';
+      recsSubtitle.textContent = 'Your fan has been superseded. Here is the current Elta model that replaces it:';
+    } else if (recData.match_type === 'cross_reference') {
       recsTitle.textContent = 'Verified Replacement';
       recsSubtitle.textContent = 'We stock a confirmed replacement for your fan:';
     } else if (recData.match_type === 'shopify') {
@@ -646,7 +652,7 @@ function handleFiles(files) {
         const motorStr = product.motor_type || '';
         const specs = [sizeStr, motorStr, airflowStr].filter(Boolean).join(' &#183; ');
 
-        const matchBadge = recData.match_type === 'cross_reference'
+        const matchBadge = (recData.match_type === 'cross_reference' || recData.match_type === 'elta_equivalent')
         ? '<span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Verified Replacement</span>'
         : recData.match_type === 'exact'
           ? '<span class="inline-block bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">Direct Match</span>'

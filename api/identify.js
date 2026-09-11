@@ -9,6 +9,104 @@ try {
   console.warn('Could not load product catalogue:', e.message);
 }
 
+// === Elta reference data (built from Elta's selection program by scripts/build_elta.py) ===
+let eltaModels = [];
+const eltaByKey = new Map();
+try {
+  eltaModels = JSON.parse(readFileSync(join(process.cwd(), 'data', 'elta.json'), 'utf8')).models || [];
+  for (const m of eltaModels) if (!eltaByKey.has(m.key)) eltaByKey.set(m.key, m);
+} catch (e) {
+  console.warn('Could not load Elta data:', e.message);
+}
+
+function normModel(s) {
+  return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+// Give stocked Elta products real airflow figures (the Shopify export has none),
+// so the airflow part of the scoring can actually work.
+for (const p of products) {
+  if (p.airflow_m3h) continue;
+  const m = eltaByKey.get(normModel(p.sku));
+  if (m && m.airflow_m3h) p.airflow_m3h = m.airflow_m3h;
+}
+
+// Find the Elta model a plate reading refers to. Exact code match first, then a
+// unique prefix match (plates often drop or add a suffix, e.g. "SCP250/4-1").
+function findEltaModel(fields) {
+  if (!eltaModels.length) return null;
+  const mentionsElta = /elta|fantech/i.test([fields.manufacturer, fields.notes].filter(Boolean).join(' '));
+  for (const raw of [fields.model, fields.part_number]) {
+    const key = normModel(raw);
+    if (key.length < 4) continue;
+    if (eltaByKey.has(key)) return eltaByKey.get(key);
+    if (key.length < 6 && !mentionsElta) continue;
+    // Plate code is the start of an Elta code (suffix missing) — prefer current models
+    const longer = eltaModels.filter(m => m.key.startsWith(key));
+    const current = longer.filter(m => m.current);
+    const pool = current.length ? current : longer;
+    if (pool.length && new Set(pool.map(m => m.size_mm)).size === 1) return pool[0];
+    // Elta code is the start of the plate code (plate has extra characters)
+    const shorter = eltaModels.filter(m => m.key.length >= 6 && key.startsWith(m.key))
+      .sort((a, b) => b.key.length - a.key.length);
+    if (shorter.length) return shorter[0];
+  }
+  return null;
+}
+
+// Current Elta models that could replace a superseded one: same kind of fan,
+// same duct size and supply, and at least ~85% of the airflow.
+function eltaEquivalents(old) {
+  const sameFamilyWord = (a, b) => (a || '').split(' ')[0] === (b || '').split(' ')[0];
+  const prefix = s => (s.match(/^[A-Z]+/) || [''])[0];
+  return eltaModels
+    .filter(m => m.current && m.key !== old.key && m.category === old.category &&
+      m.size_mm === old.size_mm && (!old.phase || !m.phase || m.phase === old.phase) &&
+      (!old.airflow_m3h || !m.airflow_m3h || m.airflow_m3h >= old.airflow_m3h * 0.85))
+    .map(m => {
+      let score = 0;
+      if (m.family === old.family) score += 4; else if (sameFamilyWord(m.family, old.family)) score += 2;
+      if (prefix(m.key) === prefix(old.key)) score += 3; // same product line, e.g. SCP -> SCP
+      if (m.motor_type === old.motor_type) score += 2;
+      if (m.poles && m.poles === old.poles) score += 1;
+      if (old.airflow_m3h && m.airflow_m3h) {
+        const r = m.airflow_m3h / old.airflow_m3h;
+        score -= r < 1 ? (1 - r) * 3 : (r - 1); // falling short matters more than overshooting
+      }
+      return { m, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(x => x.m);
+}
+
+// Overwrite AI guesses with Elta's own figures
+function applyEltaData(fields, elta) {
+  fields.manufacturer = fields.manufacturer || 'Elta';
+  fields.elta_model = elta.model;
+  fields.range = elta.range;
+  if (elta.size_mm) fields.size_mm = elta.size_mm;
+  if (elta.airflow_m3h) {
+    fields.airflow = elta.airflow_m3h + ' m³/h max (Elta data)';
+    fields.estimated_airflow_m3h = elta.airflow_m3h;
+  }
+  if (elta.max_pressure_pa) fields.max_pressure = elta.max_pressure_pa + ' Pa';
+  if (!fields.voltage && elta.spec && elta.spec.voltage) fields.voltage = elta.spec.voltage + 'V';
+  if (!fields.current && elta.spec && elta.spec.flc_a) fields.current = elta.spec.flc_a + 'A';
+  if (!fields.ip_rating && elta.spec && elta.spec.ip) fields.ip_rating = elta.spec.ip;
+  if (elta.url) fields.manufacturer_url = elta.url;
+  else delete fields.manufacturer_url; // AI-guessed links are often wrong
+  delete fields.product_image_url;     // likewise AI-guessed image URLs
+  delete fields.estimated_specs;
+  fields.notes = [fields.notes, elta.current ? null : 'This model has been superseded by Elta.']
+    .filter(Boolean).join(' ');
+  return fields;
+}
+
+const CATEGORY_MAP = {
+  'inline-duct-fan': 'Duct Fans', 'mixed-flow-fan': 'Duct Fans', 'plate-axial-fan': 'Axial Fan',
+  'axial-fan': 'Axial Fan', 'roof-fan': 'Roof Fans', 'bathroom-extractor': 'Ventilation Fans'
+};
+
 // === Recommendation Logic (inline to avoid module issues on Vercel) ===
 
 function parseSizeMm(str) {
@@ -17,7 +115,7 @@ function parseSizeMm(str) {
   const mmMatch = str.match(/(\d{2,4})\s*mm/i);
   if (mmMatch) return parseInt(mmMatch[1]);
   const inchMap = { '4': 100, '5': 125, '6': 150, '7': 180, '8': 200, '9': 225, '10': 250, '12': 315, '14': 355, '16': 400, '18': 450, '20': 500 };
-  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ³|'')/i);
+  const inchMatch = str.match(/(\d{1,2})\s*(?:inch|in|"|″|'')/i);
   if (inchMatch && inchMap[inchMatch[1]]) return inchMap[inchMatch[1]];
   return null;
 }
@@ -25,7 +123,7 @@ function parseSizeMm(str) {
 function parseAirflow(str) {
   if (!str) return null;
   str = String(str);
-  const m3hMatch = str.match(/([\d,.]+)\s*m[ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ³3]\/?h/i);
+  const m3hMatch = str.match(/([\d,.]+)\s*m[³3]\/?h/i);
   if (m3hMatch) return parseFloat(m3hMatch[1].replace(',', ''));
   const lsMatch = str.match(/([\d,.]+)\s*l\/?s/i);
   if (lsMatch) return Math.round(parseFloat(lsMatch[1].replace(',', '')) * 3.6);
@@ -70,15 +168,15 @@ function extractSizeFromModel(model) {
   return null;
 }
 
-function getRecommendations(fields) {
+function getRecommendations(fields, elta) {
   if (!products.length) return { match_type: 'none', recommendations: [], message: "Product catalogue not loaded." };
 
   const criteria = {
     size_mm: parseInt(fields.size_mm) || parseSizeMm(fields.model) || parseSizeMm(fields.airflow) || parseSizeMm(fields.notes) ||
              extractSizeFromModel(fields.model) || extractSizeFromModel(fields.part_number),
     airflow_m3h: parseAirflow(fields.airflow) || parseFloat(fields.estimated_airflow_m3h) || null,
-    motor_type: parseMotorType(fields),
-    category: inferCategory(fields),
+    motor_type: (elta && elta.motor_type) || parseMotorType(fields),
+    category: (elta && elta.category) || CATEGORY_MAP[inferCategory(fields)] || null,
     brand: fields.manufacturer || null
   };
 
@@ -110,6 +208,29 @@ function getRecommendations(fields) {
       }
     }
 
+    // === Superseded Elta model -> current Elta equivalent we stock ===
+    if (elta && !elta.current) {
+      const equivalents = eltaEquivalents(elta);
+      const stocked = [];
+      for (const eq of equivalents) {
+        const p = products.find(p => p.in_stock && normModel(p.sku) === eq.key);
+        if (p && !stocked.includes(p)) stocked.push({ ...p, eq });
+        if (stocked.length >= 3) break;
+      }
+      if (stocked.length > 0) {
+        return {
+          match_type: 'elta_equivalent',
+          criteria,
+          recommendations: stocked.map(({ eq, ...p }) => ({
+            ...p,
+            match_type: 'elta_equivalent',
+            match_reason: 'Current Elta equivalent of ' + elta.model +
+              (eq.airflow_m3h && elta.airflow_m3h ? ' \u2014 ' + eq.airflow_m3h + ' m\u00b3/h vs ' + elta.airflow_m3h + ' m\u00b3/h' : '')
+          }))
+        };
+      }
+    }
+
     // Exact model/SKU match
   const model = (fields.model || '').toLowerCase().replace(/[\s-]/g, '');
   const partNum = (fields.part_number || '').toLowerCase().replace(/[\s-]/g, '');
@@ -129,7 +250,7 @@ function getRecommendations(fields) {
         recommendations: exactMatches.map(p => ({
           ...p,
           match_type: 'exact',
-          match_reason: 'Direct model/SKU match ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ likely the same fan or its current equivalent'
+          match_reason: 'Direct model/SKU match — likely the same fan or its current equivalent'
         }))
       };
     }
@@ -152,12 +273,15 @@ function getRecommendations(fields) {
 
       if (criteria.motor_type && p.motor_type === criteria.motor_type) { score += 20; reasons.push('Same motor type'); }
       if (criteria.category && p.category === criteria.category) { score += 15; reasons.push('Same fan type'); }
+      if (elta && elta.phase && p.phase === elta.phase) { score += 10; reasons.push(elta.phase === 1 ? 'Single phase' : 'Three phase'); }
       if (criteria.brand && p.brand && p.brand.toLowerCase() === criteria.brand.toLowerCase()) { score += 10; reasons.push('Same brand'); }
       if (p.in_stock) { score += 5; }
 
       return { ...p, match_score: score, match_reasons: reasons };
     })
     .filter(p => p.match_score >= 30)
+    // Elta data tells us the fan type for certain, so don't offer a duct fan for a roof fan
+    .filter(p => !(elta && elta.category) || p.category === elta.category)
     .sort((a, b) => b.match_score - a.match_score)
     .slice(0, 5);
 
@@ -168,7 +292,7 @@ function getRecommendations(fields) {
         recommendations: scored.map(p => ({
           ...p,
           match_type: 'similar',
-          match_reason: p.match_reasons.join(' ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ· ')
+          match_reason: p.match_reasons.join(' · ')
         }))
       };
     }
@@ -178,7 +302,7 @@ function getRecommendations(fields) {
     match_type: 'none',
     criteria,
     recommendations: [],
-    message: "We couldn't find an automatic match, but don't worry ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ our team can help. Submit your enquiry and we'll find the right replacement."
+    message: "We couldn't find an automatic match, but don't worry — our team can help. Submit your enquiry and we'll find the right replacement."
   };
 }
 
@@ -275,11 +399,11 @@ Return a JSON object with these fields (use null for any field you can't determi
   "frequency": "e.g. 50Hz",
   "power": "e.g. 150W",
   "current": "e.g. 0.65A",
-  "airflow": "e.g. 500 mÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ³/h or 139 l/s",
+  "airflow": "e.g. 500 m³/h or 139 l/s",
   "speed": "e.g. 1400 RPM",
   "ip_rating": "e.g. IP44",
   "date": "Manufacturing date if visible",
-  "notes": "Any other relevant info you can see ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
+  "notes": "Any other relevant info you can see — motor type (EC/AC), class, weight, country of origin, certification marks, fan type (inline, axial, centrifugal, plate), duct size, etc."
 }
 
 If the image is NOT a fan ID plate (e.g. it's a photo of the fan housing, a random object, or unclear), still try to identify the fan type and manufacturer if possible, and note this in the "notes" field.
@@ -326,7 +450,16 @@ Return ONLY the JSON object, no other text.`
           if (cleaned.estimated_airflow_m3h && !cleaned.airflow) {
             cleaned.airflow = cleaned.estimated_airflow_m3h + ' m3/h';
           }
-          let recommendations = getRecommendations(cleaned);
+          // Swap AI guesses for Elta's own data when we recognise the model
+          const elta = findEltaModel(cleaned);
+          if (elta) {
+            applyEltaData(cleaned, elta);
+            if (!elta.current) {
+              const eq = eltaEquivalents(elta)[0];
+              if (eq) cleaned.current_equivalent = eq.model;
+            }
+          }
+          let recommendations = getRecommendations(cleaned, elta);
 
           // Shopify fallback if no catalogue match
           if (recommendations.match_type === "none" || !recommendations.recommendations || recommendations.recommendations.length === 0) { const sq = [cleaned.model, cleaned.part_number, cleaned.manufacturer].filter(Boolean).join(" "); if (sq) { const sr = await searchShopify(sq); if (sr.length > 0) { recommendations = { match_type: "shopify", recommendations: sr.map(function(p) { return Object.assign({}, p, {match_type: "shopify"}); }) }; } } }
