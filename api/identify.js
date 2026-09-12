@@ -275,16 +275,18 @@ function getRecommendations(fields, elta) {
     if (list.length) matchType = 'elta_equivalent';
   }
 
-  // 3. Alternatives of the same fan type, ranked by size, airflow, motor and brand
-  if (criteria.size_mm) {
+  // 3. Alternatives of the same fan type, ranked by size, airflow, motor and brand.
+  // If we never worked out a size, same-type fans are still better than nothing.
+  const typeOnly = !criteria.size_mm && !!criteria.type && !list.length;
+  if (criteria.size_mm || typeOnly) {
     const loose = [fields.model, fields.part_number].map(s => (s || '').toLowerCase().replace(/[\s-]/g, '')).filter(s => s.length >= 4);
     const scored = inStock.filter(p => !listed(p) && sameType(p)).map(p => {
-      let score = 0;
+      let score = typeOnly ? 50 : 0;
       const reasons = [];
       const pSku = p.sku.toLowerCase().replace(/[\s-]/g, ''), pName = p.name.toLowerCase().replace(/[\s-]/g, '');
       if (loose.some(m => pSku.includes(m) || pName.includes(m) || m.includes(pSku))) { score += 40; reasons.push('Same model family'); }
-      if (p.size_mm === criteria.size_mm) { score += 50; reasons.push('Same size'); }
-      else if (Math.abs(p.size_mm - criteria.size_mm) <= 25) { score += 20; reasons.push('Close size'); }
+      if (criteria.size_mm && p.size_mm === criteria.size_mm) { score += 50; reasons.push('Same size'); }
+      else if (criteria.size_mm && p.size_mm && Math.abs(p.size_mm - criteria.size_mm) <= 25) { score += 20; reasons.push('Close size'); }
       if (criteria.airflow_m3h && p.airflow_m3h) {
         const ratio = p.airflow_m3h / criteria.airflow_m3h;
         if (ratio >= 0.8 && ratio <= 1.2) { score += 30; reasons.push('Similar airflow'); }
@@ -297,11 +299,16 @@ function getRecommendations(fields, elta) {
       return { ...p, match_score: score, match_reasons: reasons };
     })
     .filter(p => p.match_score >= 50)
-    .sort((a, b) => b.match_score - a.match_score)
-    .slice(0, Math.max(0, 4 - list.length));
+    .sort((a, b) => b.match_score - a.match_score);
 
-    for (const p of scored) list.push({ ...p, match_type: 'similar', match_reason: p.match_reasons.join(' · ') });
-    if (!matchType && scored.length) matchType = 'similar';
+    const seen = new Set(list.map(p => p.sku));
+    for (const p of scored) {
+      if (list.length >= 4) break;
+      if (seen.has(p.sku)) continue; // the catalogue repeats a few SKUs
+      seen.add(p.sku);
+      list.push({ ...p, match_type: 'similar', match_reason: p.match_reasons.join(' · ') });
+    }
+    if (!matchType && list.length) matchType = 'similar';
   }
 
   if (!list.length) {
