@@ -83,24 +83,30 @@ function eltaEquivalents(old) {
 
 // Overwrite AI guesses with Elta's own figures
 function applyEltaData(fields, elta) {
-  fields.manufacturer = fields.manufacturer || 'Elta';
+  // Once Elta's own record is in hand, drop everything the AI guessed about the
+  // fan — its notes contradict the real data, and specs it invented would be
+  // shown under "Manufacturer data". Only figures Elta confirms are put back.
+  for (const k of ['voltage', 'power', 'current', 'ip_rating', 'speed', 'frequency', 'notes', 'date']) delete fields[k];
+  fields.manufacturer = 'Elta';
+  fields.model = elta.model;
   fields.elta_model = elta.model;
   fields.range = elta.range;
+  if (elta.rpm) fields.speed = elta.rpm + ' RPM';
   if (elta.size_mm) fields.size_mm = elta.size_mm;
   if (elta.airflow_m3h) {
     fields.airflow = elta.airflow_m3h + ' m³/h max (Elta data)';
     fields.estimated_airflow_m3h = elta.airflow_m3h;
   }
   if (elta.max_pressure_pa) fields.max_pressure = elta.max_pressure_pa + ' Pa';
-  if (!fields.voltage && elta.spec && elta.spec.voltage) fields.voltage = elta.spec.voltage + 'V';
-  if (!fields.current && elta.spec && elta.spec.flc_a) fields.current = elta.spec.flc_a + 'A';
-  if (!fields.ip_rating && elta.spec && elta.spec.ip) fields.ip_rating = elta.spec.ip;
+  if (elta.spec && elta.spec.voltage) fields.voltage = elta.spec.voltage + 'V';
+  if (elta.spec && elta.spec.flc_a) fields.current = elta.spec.flc_a + 'A';
+  if (elta.spec && elta.spec.ip) fields.ip_rating = elta.spec.ip;
+  if (elta.spec && elta.spec.motor_kw) fields.power = String(elta.spec.motor_kw); // already carries its unit
   if (elta.url) fields.manufacturer_url = elta.url;
   else delete fields.manufacturer_url; // AI-guessed links are often wrong
   delete fields.product_image_url;     // likewise AI-guessed image URLs
   delete fields.estimated_specs;
-  fields.notes = [fields.notes, elta.current ? null : 'This model has been superseded by Elta.']
-    .filter(Boolean).join(' ');
+  if (!elta.current) fields.notes = 'This model has been superseded by Elta.';
   return fields;
 }
 
