@@ -363,6 +363,86 @@ async function searchShopify(fields) {
   return [];
 }
 
+// === Product photos ===
+// A photo is only shown when we can stand behind it: our own product image, or an
+// image on a manufacturer page we fetched and checked actually covers this model.
+// AI-guessed URLs are treated as leads to verify, never as answers.
+const BRAND_DOMAIN = {
+  elta: 'eltauk.com', fantech: 'eltauk.com', hydor: 'hydor.co.uk',
+  'vent-axia': 'vent-axia.com', ventaxia: 'vent-axia.com',
+  systemair: 'systemair.com', 'soler & palau': 'solerpalau.com', 'soler and palau': 'solerpalau.com',
+  'sandp': 'solerpalau.com', 'sp': 'solerpalau.com',
+  helios: 'heliosfans.co.uk', nuaire: 'nuaire.co.uk', vortice: 'vortice.ltd.uk',
+  xpelair: 'xpelair.co.uk', greenwood: 'greenwood.co.uk', domus: 'domusventilation.co.uk',
+  airflow: 'airflow.com', titon: 'titon.com', blauberg: 'blaubergventilatoren.de',
+  'ebm-papst': 'ebmpapst.com', ebmpapst: 'ebmpapst.com', 'ziehl-abegg': 'ziehl-abegg.com',
+  ziehlabegg: 'ziehl-abegg.com', flaktgroup: 'flaktgroup.com', woods: 'flaktgroup.com',
+  casals: 'casals.tv', vents: 'vents.ua', maico: 'maico-ventilatoren.com'
+};
+const slug = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const fetchCache = new Map();
+function cached(key, fn) {
+  if (!fetchCache.has(key)) fetchCache.set(key, fn().catch(() => null));
+  return fetchCache.get(key);
+}
+
+// Is this URL actually an image that loads?
+function checkImage(url) {
+  return cached('img:' + url, async () => {
+    const r = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(3500),
+      headers: { 'User-Agent': 'eFans-Fan-Finder/1.0', 'Range': 'bytes=0-2047' } });
+    if (!r.ok && r.status !== 206) return null;
+    const type = r.headers.get('content-type') || '';
+    return /^image\//i.test(type) && !/svg/i.test(type) ? url : null;
+  });
+}
+
+// The image a manufacturer page shows — only if the page really is about this fan
+function pageImage(url, brand, modelKey) {
+  return cached('page:' + url, async () => {
+    const r = await fetch(url, { signal: AbortSignal.timeout(4000),
+      headers: { 'User-Agent': 'eFans-Fan-Finder/1.0' } });
+    if (!r.ok) return null;
+    const html = (await r.text()).slice(0, 400000);
+    const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+              html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+              html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+    if (!m) return null;
+    // The page must mention the model, or be the manufacturer's own page for this range
+    const flat = html.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const host = slug(new URL(url).host);
+    const brandOk = !brand || host.includes(slug(brand)) || host.includes(slug(BRAND_DOMAIN[String(brand).toLowerCase()] || ''));
+    const modelOk = !modelKey || modelKey.length < 4 || flat.includes(modelKey);
+    if (!brandOk || !modelOk) return null;
+    return new URL(m[1], url).href;
+  });
+}
+
+// The best photo we can stand behind for the fan we just identified
+async function fanImage(fields, elta, recommendations) {
+  const modelKey = normModel((elta && elta.model) || fields.model || fields.part_number);
+  // 1. Our own product photo, if we stock this exact fan
+  const stocked = modelKey.length >= 4 && products.find(p => normModel(p.sku) === modelKey && p.image);
+  if (stocked) return stocked.image;
+  const exact = (recommendations.recommendations || []).find(p => p.match_type === 'exact' && p.image);
+  if (exact) return exact.image;
+  // 2. The manufacturer's own page. Elta's URL comes from their data, so it is trusted;
+  //    for every other brand the AI proposes a URL and we verify it before using it.
+  const brand = fields.manufacturer || '';
+  const candidates = [];
+  if (elta && elta.url) candidates.push(['page', elta.url, null]);
+  if (fields.manufacturer_url) candidates.push(['page', fields.manufacturer_url, modelKey]);
+  if (fields.product_image_url) candidates.push(['img', fields.product_image_url, null]);
+  for (const [kind, url, key] of candidates) {
+    try {
+      const hit = kind === 'img' ? await checkImage(url) : await pageImage(url, brand, key);
+      if (hit) return hit;
+    } catch (e) { /* try the next lead */ }
+  }
+  return null;
+}
+
 // === Main Handler ===
 
 export default async function handler(req, res) {
@@ -429,8 +509,8 @@ CRITICAL INSTRUCTION: You MUST estimate missing specs even if not on the plate. 
 5. Add a field "estimated_airflow_m3h" with your best estimate of max airflow in m3/h.
 Always provide these even if approximate - they are essential for finding a replacement. Add "estimated_specs": true if you filled in specs from knowledge rather than the plate.
 
-6. Add "manufacturer_url" with a likely URL for this product on the manufacturer website (e.g. nuaire.co.uk, vent-axia.com, systemair.com etc). Use your knowledge of these sites.
-7. Add "product_image_url" if you know a direct image URL for this product from your training data.
+6. Add "manufacturer_url": the most likely URL of THIS product's own page on the manufacturer's website (e.g. vent-axia.com, systemair.com, heliosfans.co.uk, nuaire.co.uk, vortice.ltd.uk, solerpalau.com). Prefer the specific product or range page over the homepage. We fetch and check this page, so a best guess is useful — but leave it null if you have no idea of the domain.
+7. Add "product_image_url" if you know a direct image URL for this product. We check that it loads before using it.
 
 Return ONLY the JSON object, no other text.` });
 
@@ -500,6 +580,9 @@ Return ONLY the JSON object, no other text.` });
         if (sr.length > 0) recommendations = { match_type: 'shopify', recommendations: sr.map(p => ({ ...p, match_type: 'shopify' })) };
       }
     }
+
+    const photo = await fanImage(cleaned, elta, recommendations);
+    if (photo) cleaned.product_image_url = photo;
 
     return res.status(200).json({ success: true, source: image ? 'photo' : 'typed', fields: cleaned, recommendations });
 

@@ -105,7 +105,10 @@ Add photo
 </div>
 <dl id="aiResultContent" class="px-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8"></dl>
 <div id="aiImageSection" class="hidden px-6 pt-4">
-<a id="aiManufLink" href="#" target="_blank" rel="noopener" class="text-sm text-black underline">View on manufacturer website &rarr;</a>
+<div class="flex items-center gap-4">
+<img id="aiFanImage" src="" alt="" class="hidden w-24 h-24 object-contain bg-panel border border-gray-200">
+<a id="aiManufLink" href="#" target="_blank" rel="noopener" class="hidden text-sm text-black underline">View on manufacturer website &rarr;</a>
+</div>
 </div>
 <p class="px-6 py-4 text-xs text-gray-400" id="aiFootnote">AI-assisted reading. Check the details against your plate.</p>
 </div>
@@ -397,8 +400,14 @@ row.appendChild(el('dt', 'text-xs uppercase tracking-wider text-gray-500 mb-1', 
 row.appendChild(el('dd', key === 'notes' ? 'text-sm text-gray-700' : 'text-sm text-black font-medium', String(fields[key])));
 aiResultContent.appendChild(row);
 }
-const link = $('aiManufLink');
-$('aiImageSection').classList.toggle('hidden', !fields.manufacturer_url);
+const link = $('aiManufLink'), photo = $('aiFanImage');
+$('aiImageSection').classList.toggle('hidden', !(fields.manufacturer_url || fields.product_image_url));
+photo.classList.toggle('hidden', !fields.product_image_url);
+if (fields.product_image_url) {
+photo.src = fields.product_image_url;
+photo.onerror = () => photo.classList.add('hidden'); // never leave a broken image on the page
+}
+link.classList.toggle('hidden', !fields.manufacturer_url);
 if (fields.manufacturer_url) link.href = fields.manufacturer_url;
 }
 const MATCH_COPY = {
