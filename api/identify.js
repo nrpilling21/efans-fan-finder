@@ -428,6 +428,40 @@ function pageImage(url, brand, modelKey) {
   });
 }
 
+// Ask a web search which page on the manufacturer's own site is this product.
+// Needs BRAVE_SEARCH_API_KEY (or GOOGLE_CSE_KEY + GOOGLE_CSE_CX); without a key we
+// simply skip this step, so the tool keeps working, just with fewer photos.
+async function searchProductPages(brand, model) {
+  // The model often already carries the brand — don't repeat it in the query
+  const hasBrand = brand && slug(model).startsWith(slug(brand));
+  const q = (hasBrand ? String(model) : [brand, model].filter(Boolean).join(' ')).trim();
+  if (!q.trim()) return [];
+  const brave = process.env.BRAVE_SEARCH_API_KEY;
+  const gKey = process.env.GOOGLE_CSE_KEY, gCx = process.env.GOOGLE_CSE_CX;
+  return cached('search:' + q, async () => {
+    let urls = [];
+    if (brave) {
+      const r = await fetch('https://api.search.brave.com/res/v1/web/search?count=10&q=' + encodeURIComponent(q),
+        { signal: AbortSignal.timeout(4000), headers: { 'Accept': 'application/json', 'X-Subscription-Token': brave } });
+      if (!r.ok) return [];
+      const d = await r.json();
+      urls = ((d.web && d.web.results) || []).map(x => x.url).filter(Boolean);
+    } else if (gKey && gCx) {
+      const r = await fetch('https://www.googleapis.com/customsearch/v1?num=10&key=' + gKey + '&cx=' + gCx + '&q=' + encodeURIComponent(q),
+        { signal: AbortSignal.timeout(4000) });
+      if (!r.ok) return [];
+      const d = await r.json();
+      urls = (d.items || []).map(x => x.link).filter(Boolean);
+    } else {
+      return [];
+    }
+    // The manufacturer's own site first; then trade sites, which still carry real photos
+    const want = slug(BRAND_DOMAIN[String(brand).toLowerCase()] || brand);
+    const own = urls.filter(u => { try { return want && slug(new URL(u).host).includes(want); } catch (e) { return false; } });
+    return [...own, ...urls.filter(u => !own.includes(u))].slice(0, 4);
+  }) || [];
+}
+
 // The best photo we can stand behind for the fan we just identified
 async function fanImage(fields, elta, recommendations) {
   const modelKey = normModel((elta && elta.model) || fields.model || fields.part_number);
@@ -449,6 +483,13 @@ async function fanImage(fields, elta, recommendations) {
       const hit = kind === 'img' ? await checkImage(url) : await pageImage(url, brand, key);
       if (hit) return hit;
     } catch (e) { /* try the next lead */ }
+  }
+  // 3. Nothing yet: ask a search engine for this product's page and check those
+  for (const url of await searchProductPages(brand, fields.model || fields.part_number)) {
+    try {
+      const hit = await pageImage(url, null, brandless);
+      if (hit) { fields.manufacturer_url = url; return hit; } // the page we verified beats the guess
+    } catch (e) { /* try the next result */ }
   }
   return null;
 }
