@@ -1,536 +1,490 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fan Replacement Finder | AI Fan Identifier | eFans Direct</title>
-  <meta name="description" content="Got a fan that's failed? Send us a photo of the ID plate &mdash; we'll identify it and find you a replacement or equivalent. Free service from eFans Direct.">
-  <link rel="canonical" href="https://fan-finder.efans.co.uk">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Design tokens taken from efans.co.uk (Made to Order louvres page)
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: { navy: '#0A1642', ink: '#111827', panel: '#F7F7F7' },
-          fontFamily: { display: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
-  <style>
-    body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #535A5E; }
-    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; }
-    .upload-zone { transition: border-color .2s ease, background-color .2s ease; }
-    .upload-zone.dragover { border-color: #111827; background-color: #EFEFEF; }
-    .fade-in { animation: fadeIn .3s ease-in; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-    details summary::-webkit-details-marker { display: none; }
-    details[open] .faq-plus { display: none; }
-    details:not([open]) .faq-minus { display: none; }
-  </style>
-
-  <!-- FAQPage Schema -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "The fan model is discontinued &mdash; can you still find a replacement?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Usually, yes. Most manufacturers publish cross-reference guides for discontinued models. We carry current equivalents from Vent-Axia, Systemair, S&P, Elta, and others. If the original model is gone, we'll find you something that matches the duty, duct size, and mounting."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What if the ID plate is missing or unreadable?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Send us whatever you've got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans. We can usually work it out from the housing shape, motor type, and application."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How quickly can you get the replacement to me?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "If we stock the replacement or equivalent, it's next-day delivery. For non-stock items or specialist orders, we'll give you an honest lead time."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How do I know what size extractor fan I need?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "It depends on the room volume and the required air change rate. For bathrooms, Building Regs require 15 l/s (54 m&#179;/h). For commercial kitchens, you might need 20-30 air changes per hour. Send us the room dimensions and use &mdash; we'll calculate it for you."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can you supply the same brand, or do I need to switch?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "We stock all the major brands &mdash; Vent-Axia, Systemair, S&P, Elta, Greenwood, Nuaire, Xpelair, and more. If the original brand is available, we'll quote it. If not, we'll recommend the closest equivalent."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "I need to replace 20+ fans across a building. Can you help?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Absolutely &mdash; that's our bread and butter. Send us the details and we'll put together a full schedule with quantities, lead times, and pricing."
-        }
-      }
-    ]
-  }
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fan Replacement Finder | AI Fan Identifier | eFans Direct</title>
+<meta name="description" content="Got a fan that's failed? Type the model or send a photo of the ID plate &mdash; we'll identify it and find you a replacement or equivalent. Free service from eFans Direct.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+// Design tokens taken from efans.co.uk (Made to Order louvres page)
+tailwind.config = {
+theme: {
+extend: {
+colors: { navy: '#0A1642', ink: '#111827', panel: '#F7F7F7' },
+fontFamily: { display: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+}
+}
+}
+</script>
+<style>
+body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; color: #535A5E; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #6B7280; }
+.fade-in { animation: fadeIn .35s ease-out both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.composer { transition: border-color .2s ease, box-shadow .2s ease; }
+.composer:focus-within, .composer.dragover { border-color: #111827; box-shadow: 0 8px 30px rgba(10,22,66,.08); }
+#composerInput { field-sizing: content; }
+details summary::-webkit-details-marker { display: none; }
+details[open] .faq-plus { display: none; }
+details:not([open]) .faq-minus { display: none; }
+.step-dot { width: 18px; height: 18px; }
+</style>
 </head>
 <body class="bg-white">
+<div class="bg-navy text-white text-center text-xs sm:text-sm font-semibold py-2 px-4 border-b border-white/10">
+Free Help &amp; Advice: <a href="mailto:hello@efans.co.uk" class="hover:underline">hello@efans.co.uk</a> <span class="hidden sm:inline">| Mon &ndash; Fri 9:00am &ndash; 5:00pm</span>
+</div>
+<header class="bg-navy text-white">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-5 flex items-center justify-between gap-4">
+<a href="https://www.efans.co.uk" class="flex items-center gap-4">
+<img src="https://www.efans.co.uk/cdn/shop/files/logo-updated-white_115x@2x.png" alt="eFans" width="115" height="48" class="h-9 w-auto">
+<span class="hidden sm:inline text-sm text-white/60 border-l border-white/20 pl-4">Fan Replacement Finder</span>
+</a>
+<div class="flex items-center gap-6 text-sm">
+<a href="tel:01204263014" class="hidden sm:inline text-white/80 hover:text-white">01204 263014</a>
+<a href="https://www.efans.co.uk" class="font-medium hover:underline">efans.co.uk &rarr;</a>
+</div>
+</div>
+</header>
+<div class="bg-[#F3F3F3] border-b border-gray-200">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+<div><p class="font-semibold text-navy">Next Working Day Delivery</p><p class="text-xs text-gray-500">On select items. Order by 12pm</p></div>
+<div><p class="font-semibold text-navy">Every Major Brand</p><p class="text-xs text-gray-500">Vent-Axia, Systemair, S&amp;P, Elta&hellip;</p></div>
+<div><p class="font-semibold text-navy">40+ Years in Ventilation</p><p class="text-xs text-gray-500">Real people on the phone</p></div>
+<div><p class="font-semibold text-navy">Trustpilot Rated Excellent</p><p class="text-xs text-gray-500">4.8 out of 5 stars</p></div>
+</div>
+</div>
+<main>
+<section class="max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-6 md:pt-24 text-center">
+<h1 class="font-display text-4xl md:text-5xl leading-tight text-black font-normal">
+<span class="block">Which fan do you need replacing?</span>
+<span class="block text-gray-400">Type the model, or send us the plate.</span>
+</h1>
+<p class="text-base text-gray-600 mt-6 max-w-xl mx-auto">Free, for any brand. We'll identify the fan and show you what we stock &mdash; the same model, its current equivalent, or the closest fit.</p>
+</section>
+<section id="ask" class="max-w-3xl mx-auto px-4 sm:px-6 pb-6 scroll-mt-6">
+<form id="composer" class="composer bg-white border border-gray-300 rounded-2xl p-3 sm:p-4 text-left">
+<label for="composerInput" class="sr-only">Fan make and model, or a description</label>
+<textarea id="composerInput" rows="2" maxlength="300" placeholder="e.g. Elta SCP630/4-1, or &ldquo;450mm plate fan, single phase&rdquo;"
+class="w-full resize-none bg-transparent px-2 pt-1 pb-3 text-base text-ink placeholder-gray-400 focus:outline-none"></textarea>
+<div id="composerThumbs" class="hidden flex-wrap gap-2 px-2 pb-3"></div>
+<div class="flex items-center justify-between gap-3 px-1">
+<button type="button" id="addPhotoBtn" class="inline-flex items-center gap-2 rounded-full border border-gray-300 hover:border-black hover:text-black text-gray-700 text-sm font-medium pl-3 pr-4 py-2 transition-colors">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+Add photo
+</button>
+<button type="submit" id="composerSend" aria-label="Find my replacement" class="w-11 h-11 rounded-full bg-black text-white flex items-center justify-center hover:bg-gray-800 disabled:bg-gray-200 disabled:text-gray-400 transition-colors">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-6 6m6-6l6 6"></path></svg>
+</button>
+</div>
+</form>
+<p class="text-xs text-gray-500 mt-3 px-1">No plate to hand? Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a> and we'll work it out with you.</p>
+</section>
+<section class="max-w-3xl mx-auto px-4 sm:px-6 pb-16">
+<div id="thinking" class="hidden fade-in border-t border-gray-200 pt-6 mb-8">
+<div class="flex items-center gap-2 text-sm mb-4">
+<span class="w-2 h-2 rounded-full bg-black animate-pulse"></span>
+<span class="text-black font-medium">Working for <span id="thinkClock">0s</span></span>
+<span class="text-gray-300">&middot;</span>
+<span class="text-gray-500" id="thinkHead">Identifying your fan</span>
+</div>
+<ol id="thinkSteps" class="border-l border-gray-200 pl-5 space-y-3 text-sm"></ol>
+</div>
+<div id="aiError" class="hidden fade-in border border-gray-200 bg-panel p-6 mb-6">
+<p class="text-black font-medium mb-1" id="aiErrorTitle">We couldn't identify that fan automatically</p>
+<p class="text-sm text-gray-600">Try a clearer photo or type the model instead &mdash; or call <a href="tel:01204263014" class="text-black underline">01204 263014</a> and we'll identify it for you.</p>
+</div>
+<div id="aiResult" class="hidden fade-in border border-gray-200 mb-8">
+<div class="flex items-center justify-between px-6 pt-6 pb-4">
+<p class="eyebrow">Fan identified</p>
+<span id="aiSourceChip" class="hidden bg-gray-100 text-gray-700 text-xs rounded-full px-3 py-1">Manufacturer data</span>
+</div>
+<dl id="aiResultContent" class="px-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8"></dl>
+<div id="aiImageSection" class="hidden px-6 pt-4">
+<a id="aiManufLink" href="#" target="_blank" rel="noopener" class="text-sm text-black underline">View on manufacturer website &rarr;</a>
+</div>
+<p class="px-6 py-4 text-xs text-gray-400" id="aiFootnote">AI-assisted reading. Check the details against your plate.</p>
+</div>
+<div id="recommendations" class="hidden fade-in">
+<div id="recsFound" class="hidden">
+<p class="eyebrow mb-2" id="recsEyebrow">Recommended</p>
+<h3 class="font-display text-2xl text-black font-normal mb-1" id="recsTitle">Recommended replacements</h3>
+<p class="text-sm text-gray-600 mb-6" id="recsSubtitle">Replacements we stock:</p>
+<div id="recsContent" class="border-t border-gray-200"></div>
+<p class="text-xs text-gray-500 mt-4">Prices exc. VAT. Need help? Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a></p>
+</div>
+<div id="recsNone" class="hidden border border-gray-200 bg-panel p-6">
+<p class="text-black font-medium mb-1">We'll find your replacement</p>
+<p class="text-sm text-gray-600">We couldn't match this automatically, but our team has 40+ years of experience matching fans. Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email your photo to <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a>.</p>
+</div>
+</div>
+</section>
+<section id="how" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-20">
+<p class="eyebrow mb-6">The process</p>
+<div class="flex flex-wrap items-end justify-between gap-6 mb-10">
+<h2 class="font-display text-3xl md:text-4xl text-black font-normal">From photo to replacement in seconds.</h2>
+<a href="#ask" class="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800">Find my fan</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 md:border-l md:border-gray-200 md:divide-x md:divide-gray-200 gap-8 md:gap-0">
+<div class="md:px-6">
+<h3 class="font-display text-6xl text-black font-normal mb-10">01</h3>
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-3">Find the ID plate</p>
+<p class="text-sm text-gray-700">Usually on the motor housing or the side of the casing. It shows the manufacturer, model, voltage and airflow.</p>
+</div>
+<div class="md:px-6">
+<h3 class="font-display text-6xl text-black font-normal mb-10">02</h3>
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-3">Type it or add a photo</p>
+<p class="text-sm text-gray-700">Type the model from a quote or invoice, or snap the plate. We pull in the manufacturer's own data where we have it.</p>
+</div>
+<div class="md:px-6">
+<h3 class="font-display text-6xl text-black font-normal mb-10">03</h3>
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-3">See your replacement</p>
+<p class="text-sm text-gray-700">We match it to the fan we stock &mdash; the same model, its current equivalent, or the closest fit by size and airflow.</p>
+</div>
+</div>
+</section>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
+<p class="eyebrow mb-12">Why choose eFans?</p>
+<div class="font-display text-4xl md:text-6xl leading-tight font-normal">
+<p class="text-gray-400">Every major brand</p>
+<p class="text-gray-400">Expert advice</p>
+<p class="text-ink">Next-day delivery</p>
+</div>
+<p class="text-sm text-gray-600 mt-8 max-w-md">From a single failed extractor to a full building schedule &mdash; same service on every job.</p>
+</section>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
+<p class="eyebrow mb-6">Where to find the ID plate</p>
+<h2 class="font-display text-3xl md:text-4xl text-black font-normal mb-10">A small label showing the make, model and specs.</h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-gray-200">
+<div class="py-6 lg:pr-6 border-b border-gray-200 lg:border-b-0">
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Wall-mounted fans</p>
+<p class="text-sm text-gray-700">Behind the front grille or on the back of the unit. You may need to remove the cover.</p>
+</div>
+<div class="py-6 lg:px-6 border-b border-gray-200 lg:border-b-0 lg:border-l">
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Inline / duct fans</p>
+<p class="text-sm text-gray-700">On the motor casing, visible from the side. Usually reachable without removing the fan.</p>
+</div>
+<div class="py-6 lg:px-6 border-b border-gray-200 lg:border-b-0 lg:border-l">
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Centrifugal fans</p>
+<p class="text-sm text-gray-700">On the scroll housing or motor mount. Check the back and sides of the unit.</p>
+</div>
+<div class="py-6 lg:pl-6 lg:border-l border-gray-200">
+<p class="text-xs uppercase tracking-wider text-gray-500 mb-2">MVHR units</p>
+<p class="text-sm text-gray-700">On a side panel, usually accessible from the loft or plant room.</p>
+</div>
+</div>
+<div class="bg-panel p-6 mt-8">
+<p class="text-sm text-gray-700"><span class="text-black font-medium">Plate worn or missing?</span> Type the model instead, or send us a photo of the fan itself, the duct size and where it's installed. We can usually work it out.</p>
+</div>
+</section>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
+<h2 class="font-display text-4xl text-black font-normal mb-4">Got a question?</h2>
+<p class="text-gray-600 mb-10">If you need to speak to us directly then please email <a href="mailto:hello@efans.co.uk" class="text-black">hello@efans.co.uk</a></p>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 border-b border-gray-200 pb-10 mb-10">
+<p class="eyebrow">Replacements</p>
+<div class="md:col-span-3 divide-y divide-gray-200">
+<details class="py-5" open>
+<summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">The fan model is discontinued &mdash; can you still find a replacement?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
+<p class="text-sm text-gray-600 mt-3">Usually, yes. Most manufacturers publish cross-reference guides for discontinued models. We carry current equivalents from Vent-Axia, Systemair, S&amp;P, Elta, and others. If the original model is gone, we'll find you something that matches the duty, duct size, and mounting.</p>
+</details>
+<details class="py-5">
+<summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">The ductwork can't change. Can you match the connection?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
+<p class="text-sm text-gray-600 mt-3">That's the most common requirement. Send us the duct diameter and the airflow duty &mdash; we'll spec a fan that fits the existing installation.</p>
+</details>
+<details class="py-5">
+<summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">What if the ID plate is missing or unreadable?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
+<p class="text-sm text-gray-600 mt-3">Type the model from a quote or invoice, or send us whatever you've got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans.</p>
+</details>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<p class="eyebrow">Ordering</p>
+<div class="md:col-span-3 divide-y divide-gray-200">
+<details class="py-5">
+<summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">How quickly can you get the replacement to me?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
+<p class="text-sm text-gray-600 mt-3">If we stock the replacement or equivalent, it's next-day delivery. For non-stock items or specialist orders, we'll give you an honest lead time.</p>
+</details>
+<details class="py-5">
+<summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">I need to replace 20+ fans across a building. Can you help?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
+<p class="text-sm text-gray-600 mt-3">Absolutely &mdash; that's our bread and butter. Send us the details and we'll put together a full schedule with quantities, lead times, and pricing.</p>
+</details>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-navy text-white">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+<img src="https://www.efans.co.uk/cdn/shop/files/logo-updated-white_115x@2x.png" alt="eFans" width="115" height="48" class="h-8 w-auto">
+<div class="text-sm text-white/70 flex flex-wrap gap-x-6 gap-y-2">
+<a href="https://www.efans.co.uk" class="hover:text-white">efans.co.uk</a>
+<a href="mailto:hello@efans.co.uk" class="hover:text-white">hello@efans.co.uk</a>
+<a href="tel:01204263014" class="hover:text-white">01204 263014</a>
+</div>
+<p class="text-xs text-white/50">&copy; 2026 eFans Direct Ltd</p>
+</div>
+</footer>
+<div id="photoModal" class="hidden fixed inset-0 z-50 items-center justify-center p-4 bg-black/50">
+<div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl" role="dialog" aria-modal="true" aria-labelledby="photoModalTitle">
+<div class="flex items-center justify-between px-6 py-5 border-b border-gray-200">
+<h2 id="photoModalTitle" class="text-base font-medium text-black">Add a photo of the ID plate</h2>
+<button type="button" id="photoModalClose" aria-label="Close" class="w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:border-black hover:text-black flex items-center justify-center">&times;</button>
+</div>
+<div class="p-6">
+<div id="dropZone" class="border-2 border-dashed border-gray-300 hover:border-black rounded-xl bg-panel py-16 px-6 text-center cursor-pointer transition-colors">
+<input type="file" id="fileInput" accept="image/*" multiple class="hidden" capture="environment">
+<div class="w-12 h-12 rounded-full border border-gray-300 bg-white text-2xl text-gray-500 flex items-center justify-center mx-auto mb-5">+</div>
+<p class="text-black font-medium">Drag your photo here, or browse</p>
+<p class="text-sm text-gray-500 mt-1">JPEG or PNG, up to 10MB. Multiple photos welcome.</p>
+</div>
+<div id="modalThumbs" class="hidden flex-wrap gap-3 mt-6"></div>
+</div>
+<div class="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-200">
+<p class="text-xs text-gray-500">We only read the plate to identify the fan.</p>
+<button type="button" id="photoModalDone" class="bg-black text-white px-6 py-2.5 rounded-full text-sm font-medium hover:bg-gray-800">Done</button>
+</div>
+</div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const composer = $('composer'), composerInput = $('composerInput'), composerThumbs = $('composerThumbs');
+const photoModal = $('photoModal'), dropZone = $('dropZone'), fileInput = $('fileInput'), modalThumbs = $('modalThumbs');
+const thinking = $('thinking'), thinkSteps = $('thinkSteps'), thinkClock = $('thinkClock'), thinkHead = $('thinkHead');
+const aiResult = $('aiResult'), aiResultContent = $('aiResultContent'), aiError = $('aiError');
+const recommendations = $('recommendations'), recsFound = $('recsFound'), recsNone = $('recsNone'), recsContent = $('recsContent');
+const recsTitle = $('recsTitle'), recsSubtitle = $('recsSubtitle'), recsEyebrow = $('recsEyebrow');
+let photos = []; // compressed data URLs, first one is sent for identification
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  <!-- Announcement bar -->
-  <div class="bg-navy text-white text-center text-xs sm:text-sm font-semibold py-2 px-4 border-b border-white/10">
-    Free Help &amp; Advice: <a href="mailto:hello@efans.co.uk" class="hover:underline">hello@efans.co.uk</a> <span class="hidden sm:inline">| Mon &ndash; Fri 9:00am &ndash; 5:00pm</span>
-  </div>
+function el(tag, cls, text) {
+const n = document.createElement(tag);
+if (cls) n.className = cls;
+if (text != null) n.textContent = text;
+return n;
+}
 
-  <!-- Header -->
-  <header class="bg-navy text-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-5 flex items-center justify-between gap-4">
-      <a href="https://www.efans.co.uk" class="flex items-center gap-4">
-        <img src="https://www.efans.co.uk/cdn/shop/files/logo-updated-white_115x@2x.png" alt="eFans" width="115" height="48" class="h-9 w-auto">
-        <span class="hidden sm:inline text-sm text-white/60 border-l border-white/20 pl-4">Fan Replacement Finder</span>
-      </a>
-      <div class="flex items-center gap-6 text-sm">
-        <a href="tel:01204263014" class="hidden sm:inline text-white/80 hover:text-white">01204 263014</a>
-        <a href="https://www.efans.co.uk" class="font-medium hover:underline">efans.co.uk &rarr;</a>
-      </div>
-    </div>
-  </header>
+// === Photo modal ===
+function openModal() { photoModal.classList.remove('hidden'); photoModal.classList.add('flex'); }
+function closeModal() { photoModal.classList.add('hidden'); photoModal.classList.remove('flex'); }
+$('addPhotoBtn').addEventListener('click', openModal);
+$('photoModalClose').addEventListener('click', closeModal);
+$('photoModalDone').addEventListener('click', closeModal);
+photoModal.addEventListener('click', e => { if (e.target === photoModal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !photoModal.classList.contains('hidden')) closeModal(); });
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-black'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-black'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('border-black'); addFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+// The composer accepts a dropped photo too, without opening the modal
+composer.addEventListener('dragover', e => { e.preventDefault(); composer.classList.add('dragover'); });
+composer.addEventListener('dragleave', () => composer.classList.remove('dragover'));
+composer.addEventListener('drop', e => { e.preventDefault(); composer.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
 
-  <!-- Trust strip -->
-  <div class="bg-[#F3F3F3] border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-      <div><p class="font-semibold text-navy">Next Working Day Delivery</p><p class="text-xs text-gray-500">On select items. Order by 12pm</p></div>
-      <div><p class="font-semibold text-navy">Every Major Brand</p><p class="text-xs text-gray-500">Vent-Axia, Systemair, S&amp;P, Elta&hellip;</p></div>
-      <div><p class="font-semibold text-navy">40+ Years in Ventilation</p><p class="text-xs text-gray-500">Real people on the phone</p></div>
-      <div><p class="font-semibold text-navy">Trustpilot Rated Excellent</p><p class="text-xs text-gray-500">4.8 out of 5 stars</p></div>
-    </div>
-  </div>
+function compressImage(base64, maxDim, quality) {
+maxDim = maxDim || 1200; quality = quality || 0.8;
+return new Promise(resolve => {
+const img = new Image();
+img.onload = () => {
+let w = img.width, h = img.height;
+if (w > maxDim || h > maxDim) {
+if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; } else { w = Math.round(w * maxDim / h); h = maxDim; }
+}
+const canvas = document.createElement('canvas');
+canvas.width = w; canvas.height = h;
+canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+resolve(canvas.toDataURL('image/jpeg', quality));
+};
+img.onerror = () => resolve(base64);
+img.src = base64;
+});
+}
+function addFiles(files) {
+Array.from(files).filter(f => f.type.startsWith('image/')).forEach(file => {
+const reader = new FileReader();
+reader.onload = e => compressImage(e.target.result).then(src => { photos.push(src); renderThumbs(); });
+reader.readAsDataURL(file);
+});
+}
+function thumb(src, i, size) {
+const wrap = el('div', 'relative');
+const img = el('img', size + ' object-cover rounded-lg border border-gray-200 bg-white');
+img.src = src; img.alt = 'ID plate photo ' + (i + 1);
+const x = el('button', 'absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black text-white text-xs leading-none flex items-center justify-center', '×');
+x.type = 'button';
+x.setAttribute('aria-label', 'Remove photo');
+x.addEventListener('click', ev => { ev.stopPropagation(); photos.splice(i, 1); renderThumbs(); });
+wrap.appendChild(img); wrap.appendChild(x);
+return wrap;
+}
+function renderThumbs() {
+composerThumbs.innerHTML = ''; modalThumbs.innerHTML = '';
+composerThumbs.classList.toggle('hidden', !photos.length);
+composerThumbs.classList.toggle('flex', !!photos.length);
+modalThumbs.classList.toggle('hidden', !photos.length);
+modalThumbs.classList.toggle('flex', !!photos.length);
+photos.forEach((src, i) => {
+composerThumbs.appendChild(thumb(src, i, 'w-14 h-14'));
+modalThumbs.appendChild(thumb(src, i, 'w-24 h-24'));
+});
+}
 
-  <main>
-    <!-- Hero -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pt-16 pb-20 md:pt-24 md:pb-24 grid md:grid-cols-2 gap-10 items-center">
-      <h1 class="font-display text-5xl md:text-6xl leading-tight text-black font-normal">
-        <span class="block">Fan Finder</span>
-        <span class="block text-gray-400">Replacements, identified</span>
-      </h1>
-      <div>
-        <p class="text-lg text-black leading-relaxed mb-8">Got a failed fan? Upload a photo of its ID plate, or just type the model. We'll identify the fan and show you the replacement we stock &mdash; free, for any brand.</p>
-        <div class="flex flex-wrap gap-3">
-          <a href="#upload" class="inline-flex items-center justify-center px-6 py-3 rounded-full bg-black text-white font-medium hover:bg-gray-800 transition-colors">Find my fan</a>
-          <a href="#how" class="inline-flex items-center justify-center px-6 py-3 rounded-full bg-white text-black font-medium border border-black hover:bg-gray-50 transition-colors">How it works</a>
-        </div>
-      </div>
-    </section>
+// === "Thinking" panel: shows what the lookup is actually doing, step by step ===
+let clockTimer = null;
+function startClock() {
+const t0 = Date.now();
+thinkClock.textContent = '0s';
+clearInterval(clockTimer);
+clockTimer = setInterval(() => {
+const s = Math.round((Date.now() - t0) / 1000);
+thinkClock.textContent = s < 60 ? s + 's' : Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+}, 1000);
+}
+function stepRow(label) {
+const li = el('li', 'flex items-start gap-3 fade-in');
+const dot = el('span', 'step-dot mt-0.5 flex-shrink-0');
+dot.innerHTML = '<svg class="animate-spin w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+li.appendChild(dot);
+li.appendChild(el('span', 'text-gray-500', label));
+thinkSteps.appendChild(li);
+return () => {
+dot.innerHTML = '<svg class="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path></svg>';
+li.lastChild.className = 'text-black';
+};
+}
+let requestDone = false;
+async function runSteps(steps) {
+for (const label of steps) {
+const done = stepRow(label);
+await sleep(requestDone ? 220 : 800 + Math.random() * 500);
+done();
+}
+}
 
-    <!-- How it works -->
-    <section id="how" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-20">
-      <p class="eyebrow mb-6">The process</p>
-      <div class="flex flex-wrap items-end justify-between gap-6 mb-10">
-        <h2 class="font-display text-3xl md:text-4xl text-black font-normal">From photo to replacement in seconds.</h2>
-        <a href="#upload" class="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800">Find my fan</a>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 md:border-l md:border-gray-200 md:divide-x md:divide-gray-200 gap-8 md:gap-0">
-        <div class="md:px-6">
-          <h3 class="font-display text-6xl text-black font-normal mb-10">01</h3>
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-3">Find the ID plate</p>
-          <p class="text-sm text-gray-700">Usually on the motor housing or the side of the casing. It shows the manufacturer, model, voltage and airflow.</p>
-        </div>
-        <div class="md:px-6">
-          <h3 class="font-display text-6xl text-black font-normal mb-10">02</h3>
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-3">Upload a photo or type it in</p>
-          <p class="text-sm text-gray-700">Snap a clear photo of the plate, or type the model from a quote or invoice. We pull in the manufacturer's own data where we have it.</p>
-        </div>
-        <div class="md:px-6">
-          <h3 class="font-display text-6xl text-black font-normal mb-10">03</h3>
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-3">See your replacement</p>
-          <p class="text-sm text-gray-700">We match it to the fan we stock &mdash; the same model, its current equivalent, or the closest fit by size and airflow.</p>
-        </div>
-      </div>
-    </section>
+// === Submit ===
+composer.addEventListener('submit', e => { e.preventDefault(); identifyFan(); });
+composerInput.addEventListener('keydown', e => {
+if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); composer.requestSubmit(); }
+});
+async function identifyFan() {
+const text = composerInput.value.trim();
+const image = photos[0] || null;
+if (!text && !image) { composerInput.focus(); return; }
+closeModal();
+const payload = image ? { image } : { text };
+if (image && text) payload.text = text;
+requestDone = false;
+thinkSteps.innerHTML = '';
+thinking.classList.remove('hidden');
+thinkHead.textContent = image ? 'Reading your ID plate' : 'Identifying your fan';
+aiResult.classList.add('hidden');
+aiError.classList.add('hidden');
+recommendations.classList.add('hidden');
+$('aiFootnote').textContent = image ? 'AI-assisted reading. Check the details against your plate.' : 'Identified from what you typed. Check the details against your fan.';
+$('aiErrorTitle').textContent = image ? "We couldn't read the plate automatically" : "We couldn't identify that fan automatically";
+startClock();
+thinking.scrollIntoView({ behavior: 'smooth', block: 'center' });
+const steps = [
+image ? 'Reading the ID plate' : 'Reading what you typed',
+'Looking the model up in the manufacturer data',
+'Checking whether it is still current',
+'Matching it against what we stock',
+'Ranking replacements of the same fan type'
+];
+let data = null, failed = false;
+const request = fetch('/api/identify', {
+method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+}).then(r => r.json()).then(d => { data = d; }).catch(() => { failed = true; })
+.finally(() => { requestDone = true; });
+await Promise.all([request, runSteps(steps)]);
+clearInterval(clockTimer);
+thinking.classList.add('hidden');
+if (failed || !data || !data.success || !data.fields) {
+aiError.classList.remove('hidden');
+showRecommendations({ match_type: 'none', recommendations: [] });
+return;
+}
+showAiResult(data.fields);
+showRecommendations(data.recommendations || { match_type: 'none', recommendations: [] });
+}
 
-    <!-- Upload -->
-    <section id="upload" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24 scroll-mt-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10 border-b border-gray-200 pb-10 mb-12">
-        <h2 class="font-display text-4xl text-black font-normal">Identify your fan</h2>
-        <div>
-          <p class="text-black mb-2">Upload a photo of the ID plate, or type the model if you don't have one.</p>
-          <p class="text-sm text-gray-500">No plate? Call us on <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a></p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-        <div>
-          <p class="font-semibold text-black">Your photo</p>
-          <p class="text-sm text-gray-500 mb-6">JPEG or PNG up to 10MB. Multiple photos welcome.</p>
-          <div id="uploadZone" class="upload-zone bg-panel border-2 border-dashed border-gray-300 hover:border-black p-10 text-center cursor-pointer">
-            <input type="file" id="fileInput" accept="image/*" multiple class="hidden" capture="environment">
-            <div id="uploadPrompt">
-              <svg class="w-10 h-10 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-              <p class="text-black font-medium mb-1">Tap to take a photo or upload an image</p>
-              <p class="text-gray-500 text-sm">Or drag and drop it here</p>
-            </div>
-            <div id="uploadPreview" class="hidden"></div>
-          </div>
-
-          <div class="flex items-center gap-4 my-8"><span class="flex-1 border-t border-gray-200"></span><span class="eyebrow">Or</span><span class="flex-1 border-t border-gray-200"></span></div>
-
-          <p class="font-semibold text-black">Type the fan</p>
-          <p class="text-sm text-gray-500 mb-4">Model or part number from the plate, a quote or an old invoice.</p>
-          <form id="typedForm" class="flex flex-col sm:flex-row gap-3">
-            <label for="typedInput" class="sr-only">Fan make and model</label>
-            <input id="typedInput" type="text" autocomplete="off" maxlength="300" placeholder="e.g. Elta SCP630/4-1 or Vent-Axia ACM150"
-              class="flex-1 min-w-0 bg-panel px-4 py-3 text-sm text-ink border border-transparent focus:border-black focus:outline-none">
-            <button type="submit" class="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800">Find replacement</button>
-          </form>
-        </div>
-
-        <div>
-          <!-- Loading -->
-          <div id="aiLoading" class="hidden border border-gray-200 p-6">
-            <div class="flex items-center gap-3">
-              <svg class="animate-spin h-5 w-5 text-black" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-              <span class="text-black" id="aiLoadingText">Reading the ID plate&hellip;</span>
-            </div>
-          </div>
-
-          <!-- Error -->
-          <div id="aiError" class="hidden fade-in border border-gray-200 bg-panel p-6 mb-6">
-            <p class="text-black font-medium mb-1" id="aiErrorTitle">We couldn't read the plate automatically</p>
-            <p class="text-sm text-gray-600">Try a clearer photo or type the model instead &mdash; or call <a href="tel:01204263014" class="text-black underline">01204 263014</a> and we'll identify it for you.</p>
-          </div>
-
-          <!-- Placeholder before upload -->
-          <div id="resultsPlaceholder" class="border border-gray-200 p-6">
-            <p class="eyebrow mb-3">Your result</p>
-            <p class="text-sm text-gray-600">Upload a photo or type the model, and the fan's details and our recommended replacement will appear here.</p>
-          </div>
-
-          <!-- AI result -->
-          <div id="aiResult" class="hidden fade-in border border-gray-200 mb-6">
-            <div class="flex items-center justify-between px-6 pt-6 pb-4">
-              <p class="eyebrow">Fan identified</p>
-              <span id="aiSourceChip" class="hidden bg-gray-100 text-gray-700 text-xs rounded-full px-3 py-1">Manufacturer data</span>
-            </div>
-            <dl id="aiResultContent" class="px-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8"></dl>
-            <div id="aiImageSection" class="hidden px-6 pt-4">
-              <div class="flex items-center gap-4">
-                <img id="aiFanImage" src="" alt="Identified fan" class="w-20 h-20 object-contain bg-panel">
-                <a id="aiManufLink" href="#" target="_blank" rel="noopener" class="text-sm text-black underline">View on manufacturer website &rarr;</a>
-              </div>
-            </div>
-            <p class="px-6 py-4 text-xs text-gray-400" id="aiFootnote">AI-assisted reading. Check the details against your plate.</p>
-          </div>
-
-          <!-- Recommendations -->
-          <div id="recommendations" class="hidden fade-in">
-            <div id="recsFound" class="hidden">
-              <p class="eyebrow mb-2" id="recsEyebrow">Recommended</p>
-              <h3 class="font-display text-2xl text-black font-normal mb-1" id="recsTitle">Recommended Replacements</h3>
-              <p class="text-sm text-gray-600 mb-6" id="recsSubtitle">Based on the ID plate reading, here are replacement fans we stock:</p>
-              <div id="recsContent" class="border-t border-gray-200"></div>
-              <p class="text-xs text-gray-500 mt-4">Prices exc. VAT. Need help? Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a></p>
-            </div>
-            <div id="recsNone" class="hidden border border-gray-200 bg-panel p-6">
-              <p class="text-black font-medium mb-1">We'll find your replacement</p>
-              <p class="text-sm text-gray-600">We couldn't match this automatically, but our team has 40+ years of experience matching fans. Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email your photo to <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a>.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Why eFans -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
-      <p class="eyebrow mb-12">Why choose eFans?</p>
-      <div class="font-display text-4xl md:text-6xl leading-tight font-normal">
-        <p class="text-gray-400">Every major brand</p>
-        <p class="text-gray-400">Expert advice</p>
-        <p class="text-ink">Next-day delivery</p>
-      </div>
-      <p class="text-sm text-gray-600 mt-8 max-w-md">From a single failed extractor to a full building schedule &mdash; same service on every job.</p>
-    </section>
-
-    <!-- Where to find the plate -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
-      <p class="eyebrow mb-6">Where to find the ID plate</p>
-      <h2 class="font-display text-3xl md:text-4xl text-black font-normal mb-10">A small label showing the make, model and specs.</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-gray-200">
-        <div class="py-6 lg:pr-6 border-b border-gray-200 lg:border-b-0">
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Wall-mounted fans</p>
-          <p class="text-sm text-gray-700">Behind the front grille or on the back of the unit. You may need to remove the cover.</p>
-        </div>
-        <div class="py-6 lg:px-6 border-b border-gray-200 lg:border-b-0 lg:border-l">
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Inline / duct fans</p>
-          <p class="text-sm text-gray-700">On the motor casing, visible from the side. Usually reachable without removing the fan.</p>
-        </div>
-        <div class="py-6 lg:px-6 border-b border-gray-200 lg:border-b-0 lg:border-l">
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Centrifugal fans</p>
-          <p class="text-sm text-gray-700">On the scroll housing or motor mount. Check the back and sides of the unit.</p>
-        </div>
-        <div class="py-6 lg:pl-6 lg:border-l border-gray-200">
-          <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">MVHR units</p>
-          <p class="text-sm text-gray-700">On a side panel, usually accessible from the loft or plant room.</p>
-        </div>
-      </div>
-      <div class="bg-panel p-6 mt-8">
-        <p class="text-sm text-gray-700"><span class="text-black font-medium">Plate worn or missing?</span> Type the model instead, or send us a photo of the fan itself, the duct size and where it's installed. We can usually work it out.</p>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 pb-24">
-      <h2 class="font-display text-4xl text-black font-normal mb-4">Got a question?</h2>
-      <p class="text-gray-600 mb-10">If you need to speak to us directly then please email <a href="mailto:hello@efans.co.uk" class="text-black">hello@efans.co.uk</a></p>
-
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 border-b border-gray-200 pb-10 mb-10">
-        <p class="eyebrow">Replacements</p>
-        <div class="md:col-span-3 divide-y divide-gray-200">
-          <details class="py-5" open>
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">The fan model is discontinued &mdash; can you still find a replacement?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">Usually, yes. Most manufacturers publish cross-reference guides for discontinued models. We carry current equivalents from Vent-Axia, Systemair, S&amp;P, Elta, and others. If the original model is gone, we'll find you something that matches the duty, duct size, and mounting.</p>
-          </details>
-          <details class="py-5">
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">The ductwork can't change. Can you match the connection?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">That's the most common requirement. Send us the duct diameter and the airflow duty &mdash; we'll spec a fan that fits the existing installation.</p>
-          </details>
-          <details class="py-5">
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">What if the ID plate is missing or unreadable?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">Type the model from a quote or invoice, or send us whatever you've got &mdash; a photo of the fan itself, the duct size, where it's installed. Our team has 40+ years of experience identifying fans.</p>
-          </details>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <p class="eyebrow">Ordering</p>
-        <div class="md:col-span-3 divide-y divide-gray-200">
-          <details class="py-5">
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">How quickly can you get the replacement to me?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">If we stock the replacement or equivalent, it's next-day delivery. For non-stock items or specialist orders, we'll give you an honest lead time.</p>
-          </details>
-          <details class="py-5">
-            <summary class="flex items-center justify-between cursor-pointer text-base font-medium text-black">I need to replace 20+ fans across a building. Can you help?<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
-            <p class="text-sm text-gray-600 mt-3">Absolutely &mdash; that's our bread and butter. Send us the details and we'll put together a full schedule with quantities, lead times, and pricing.</p>
-          </details>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-navy text-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-      <img src="https://www.efans.co.uk/cdn/shop/files/logo-updated-white_115x@2x.png" alt="eFans" width="115" height="48" class="h-8 w-auto">
-      <div class="text-sm text-white/70 flex flex-wrap gap-x-6 gap-y-2">
-        <a href="https://www.efans.co.uk" class="hover:text-white">efans.co.uk</a>
-        <a href="mailto:hello@efans.co.uk" class="hover:text-white">hello@efans.co.uk</a>
-        <a href="tel:01204263014" class="hover:text-white">01204 263014</a>
-      </div>
-      <p class="text-xs text-white/50">&copy; 2026 eFans Direct Ltd</p>
-    </div>
-  </footer>
-
-  <script>
-    const $ = id => document.getElementById(id);
-    const uploadZone = $('uploadZone'), fileInput = $('fileInput'), uploadPrompt = $('uploadPrompt'), uploadPreview = $('uploadPreview');
-    const aiResult = $('aiResult'), aiResultContent = $('aiResultContent'), aiLoading = $('aiLoading'), aiError = $('aiError');
-    const recommendations = $('recommendations'), recsFound = $('recsFound'), recsNone = $('recsNone'), recsContent = $('recsContent');
-    const recsTitle = $('recsTitle'), recsSubtitle = $('recsSubtitle'), recsEyebrow = $('recsEyebrow'), placeholder = $('resultsPlaceholder');
-
-    uploadZone.addEventListener('click', () => fileInput.click());
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
-    uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files); });
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-    function el(tag, cls, text) {
-      const n = document.createElement(tag);
-      if (cls) n.className = cls;
-      if (text != null) n.textContent = text;
-      return n;
-    }
-
-    function compressImage(base64, maxDim, quality) {
-      maxDim = maxDim || 1200; quality = quality || 0.8;
-      return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => {
-          let w = img.width, h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; } else { w = Math.round(w * maxDim / h); h = maxDim; }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', quality));
-        };
-        img.src = base64;
-      });
-    }
-
-    function handleFiles(files) {
-      const list = Array.from(files);
-      uploadPrompt.classList.add('hidden');
-      uploadPreview.classList.remove('hidden');
-      uploadPreview.innerHTML = '';
-      const row = el('div', 'flex flex-wrap gap-3 justify-center');
-
-      list.forEach((file, i) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const thumb = el('img', 'w-24 h-24 object-cover border border-gray-200 bg-white');
-          thumb.src = e.target.result;
-          row.insertBefore(thumb, addMore);
-          if (i === 0) compressImage(e.target.result).then(image => identifyFan({ image }));
-        };
-        reader.readAsDataURL(file);
-      });
-
-      const addMore = el('button', 'w-24 h-24 border border-dashed border-gray-400 flex items-center justify-center text-2xl text-gray-400 hover:border-black hover:text-black bg-white', '+');
-      addMore.type = 'button';
-      addMore.setAttribute('aria-label', 'Add another photo');
-      addMore.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
-      row.appendChild(addMore);
-      uploadPreview.appendChild(row);
-    }
-
-    $('typedForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const text = $('typedInput').value.trim();
-      if (text) identifyFan({ text });
-    });
-
-    // payload is { image } for a photo or { text } for a typed model
-    async function identifyFan(payload) {
-      const typed = !!payload.text;
-      $('aiLoadingText').textContent = typed ? 'Looking up your fan\u2026' : 'Reading the ID plate\u2026';
-      $('aiErrorTitle').textContent = typed ? "We couldn't identify that fan automatically" : "We couldn't read the plate automatically";
-      $('aiFootnote').textContent = typed ? 'Identified from what you typed. Check the details against your fan.' : 'AI-assisted reading. Check the details against your plate.';
-      placeholder.classList.add('hidden');
-      aiLoading.classList.remove('hidden');
-      aiResult.classList.add('hidden');
-      aiError.classList.add('hidden');
-      recommendations.classList.add('hidden');
-      try {
-        const response = await fetch('/api/identify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const data = await response.json();
-        aiLoading.classList.add('hidden');
-        if (data.success && data.fields) {
-          showAiResult(data.fields);
-          if (data.recommendations) showRecommendations(data.recommendations);
-        } else {
-          aiError.classList.remove('hidden');
-          showRecommendations({ match_type: 'none', recommendations: [] });
-        }
-      } catch (err) {
-        aiLoading.classList.add('hidden');
-        aiError.classList.remove('hidden');
-      }
-    }
-
-    const FIELD_LABELS = {
-      manufacturer: 'Manufacturer', model: 'Model', range: 'Range', part_number: 'Part / SKU',
-      voltage: 'Voltage', power: 'Power', current: 'Current', airflow: 'Airflow', max_pressure: 'Max pressure',
-      speed: 'Speed (RPM)', ip_rating: 'IP rating', frequency: 'Frequency', date: 'Date',
-      current_equivalent: 'Current equivalent', notes: 'Notes'
-    };
-
-    function showAiResult(fields) {
-      aiResult.classList.remove('hidden');
-      aiResultContent.innerHTML = '';
-      $('aiSourceChip').classList.toggle('hidden', !fields.elta_model);
-
-      for (const [key, label] of Object.entries(FIELD_LABELS)) {
-        if (!fields[key]) continue;
-        const row = el('div', 'py-3 border-t border-gray-200' + (key === 'notes' ? ' sm:col-span-2' : ''));
-        row.appendChild(el('dt', 'text-xs uppercase tracking-wider text-gray-500 mb-1', label));
-        row.appendChild(el('dd', key === 'notes' ? 'text-sm text-gray-700' : 'text-sm text-black font-medium', String(fields[key])));
-        aiResultContent.appendChild(row);
-      }
-
-      const imgSection = $('aiImageSection'), fanImg = $('aiFanImage'), manufLink = $('aiManufLink');
-      imgSection.classList.toggle('hidden', !(fields.product_image_url || fields.manufacturer_url));
-      fanImg.classList.toggle('hidden', !fields.product_image_url);
-      if (fields.product_image_url) fanImg.src = fields.product_image_url;
-      manufLink.classList.toggle('hidden', !fields.manufacturer_url);
-      if (fields.manufacturer_url) manufLink.href = fields.manufacturer_url;
-    }
-
-    const MATCH_COPY = {
-      exact: ['Exact match', 'We stock this fan', 'We have your exact model, plus alternatives of the same type:'],
-      elta_equivalent: ['Superseded model', 'Current Elta equivalent', 'Your fan has been superseded. This is the current model that replaces it:'],
-      cross_reference: ['Verified', 'Verified replacement', 'We stock a confirmed replacement for your fan:'],
-      shopify: ['On efans.co.uk', 'Products found on eFans', 'We found these related products on our website:'],
-      similar: ['Recommended', 'Recommended replacements', 'Replacements of the same type, matched on size, airflow and motor:']
-    };
-    const CARD_CHIP = { exact: 'Exact match', elta_equivalent: 'Current equivalent', cross_reference: 'Verified replacement', shopify: 'Website match', similar: 'Same type' };
-
-    function showRecommendations(recData) {
-      recommendations.classList.remove('hidden');
-      recsFound.classList.add('hidden');
-      recsNone.classList.add('hidden');
-      recsContent.innerHTML = '';
-
-      if (recData.match_type === 'none' || !recData.recommendations || recData.recommendations.length === 0) {
-        recsNone.classList.remove('hidden');
-        return;
-      }
-      recsFound.classList.remove('hidden');
-      const copy = MATCH_COPY[recData.match_type] || MATCH_COPY.similar;
-      recsEyebrow.textContent = copy[0];
-      recsTitle.textContent = copy[1];
-      recsSubtitle.textContent = copy[2];
-
-      recData.recommendations.forEach(product => {
-        const hl = product.highlight;
-        const card = el('a', hl
-          ? 'group flex items-start gap-4 p-4 my-4 border-2 border-black bg-white hover:bg-gray-50 transition-colors'
-          : 'group flex items-start gap-4 py-5 border-b border-gray-200 hover:bg-gray-50 transition-colors');
-        card.href = product.url; card.target = '_blank'; card.rel = 'noopener';
-
-        if (product.image) {
-          const img = el('img', 'w-20 h-20 object-contain bg-panel flex-shrink-0');
-          img.src = product.image; img.alt = '';
-          card.appendChild(img);
-        }
-        const body = el('div', 'flex-1 min-w-0');
-        body.appendChild(el('span', hl
-          ? 'inline-block bg-black text-white text-xs font-medium rounded-full px-3 py-1 mb-2'
-          : 'inline-block bg-gray-100 text-gray-700 text-xs rounded-full px-3 py-1 mb-2',
-          hl || CARD_CHIP[product.match_type] || 'Same type'));
-        body.appendChild(el('p', 'text-sm font-medium text-black', product.name));
-        const specs = [product.size_mm ? product.size_mm + 'mm' : '', product.motor_type || '', product.airflow_m3h ? product.airflow_m3h + ' m\u00b3/h' : ''].filter(Boolean).join(' \u00b7 ');
-        if (specs) body.appendChild(el('p', 'text-xs text-gray-500 mt-1', specs));
-        if (product.match_reason) body.appendChild(el('p', 'text-xs text-gray-400 mt-1', product.match_reason));
-        card.appendChild(body);
-
-        const side = el('div', 'text-right flex-shrink-0');
-        if (product.price_gbp) side.appendChild(el('p', 'text-lg text-black font-medium', '\u00a3' + product.price_gbp.toFixed(2)));
-        side.appendChild(el('p', 'text-xs text-green-700', 'In stock'));
-        side.appendChild(el('p', 'text-xs text-black mt-2 group-hover:underline', 'View \u2192'));
-        card.appendChild(side);
-        recsContent.appendChild(card);
-      });
-    }
-  </script>
+const FIELD_LABELS = {
+manufacturer: 'Manufacturer', model: 'Model', range: 'Range', part_number: 'Part / SKU',
+voltage: 'Voltage', power: 'Power', current: 'Current', airflow: 'Airflow', max_pressure: 'Max pressure',
+speed: 'Speed (RPM)', ip_rating: 'IP rating', frequency: 'Frequency', date: 'Date',
+current_equivalent: 'Current equivalent', notes: 'Notes'
+};
+function showAiResult(fields) {
+aiResult.classList.remove('hidden');
+aiResultContent.innerHTML = '';
+const fromElta = !!fields.elta_model;
+$('aiSourceChip').classList.toggle('hidden', !fromElta);
+if (fromElta) $('aiFootnote').textContent = "Specifications from Elta's own product data. Check the model against your fan.";
+for (const [key, label] of Object.entries(FIELD_LABELS)) {
+if (!fields[key]) continue;
+const row = el('div', 'py-3 border-t border-gray-200' + (key === 'notes' ? ' sm:col-span-2' : ''));
+row.appendChild(el('dt', 'text-xs uppercase tracking-wider text-gray-500 mb-1', label));
+row.appendChild(el('dd', key === 'notes' ? 'text-sm text-gray-700' : 'text-sm text-black font-medium', String(fields[key])));
+aiResultContent.appendChild(row);
+}
+const link = $('aiManufLink');
+$('aiImageSection').classList.toggle('hidden', !fields.manufacturer_url);
+if (fields.manufacturer_url) link.href = fields.manufacturer_url;
+}
+const MATCH_COPY = {
+exact: ['Exact match', 'We stock this fan', 'We have your exact model, plus alternatives of the same type:'],
+elta_equivalent: ['Superseded model', 'Current Elta equivalent', 'Your fan has been superseded. This is the current model that replaces it:'],
+cross_reference: ['Verified', 'Verified replacement', 'We stock a confirmed replacement for your fan:'],
+shopify: ['On efans.co.uk', 'Products found on eFans', 'We found these related products on our website:'],
+similar: ['Recommended', 'Recommended replacements', 'Replacements of the same type, matched on size, airflow and motor:']
+};
+const CARD_CHIP = { exact: 'Exact match', elta_equivalent: 'Current equivalent', cross_reference: 'Verified replacement', shopify: 'Website match', similar: 'Same type' };
+function showRecommendations(recData) {
+recommendations.classList.remove('hidden');
+recsFound.classList.add('hidden');
+recsNone.classList.add('hidden');
+recsContent.innerHTML = '';
+if (recData.match_type === 'none' || !recData.recommendations || !recData.recommendations.length) {
+recsNone.classList.remove('hidden');
+return;
+}
+recsFound.classList.remove('hidden');
+const copy = MATCH_COPY[recData.match_type] || MATCH_COPY.similar;
+recsEyebrow.textContent = copy[0];
+recsTitle.textContent = copy[1];
+recsSubtitle.textContent = copy[2];
+recData.recommendations.forEach(product => {
+const hl = product.highlight;
+const card = el('a', hl
+? 'group flex items-start gap-4 p-4 my-4 border-2 border-black bg-white hover:bg-gray-50 transition-colors'
+: 'group flex items-start gap-4 py-5 border-b border-gray-200 hover:bg-gray-50 transition-colors');
+card.href = product.url; card.target = '_blank'; card.rel = 'noopener';
+if (product.image) {
+const img = el('img', 'w-20 h-20 object-contain bg-panel flex-shrink-0');
+img.src = product.image; img.alt = '';
+card.appendChild(img);
+}
+const body = el('div', 'flex-1 min-w-0');
+body.appendChild(el('span', hl
+? 'inline-block bg-black text-white text-xs font-medium rounded-full px-3 py-1 mb-2'
+: 'inline-block bg-gray-100 text-gray-700 text-xs rounded-full px-3 py-1 mb-2',
+hl || CARD_CHIP[product.match_type] || 'Same type'));
+body.appendChild(el('p', 'text-sm font-medium text-black', product.name));
+const specs = [product.size_mm ? product.size_mm + 'mm' : '', product.motor_type || '', product.airflow_m3h ? product.airflow_m3h + ' m³/h' : ''].filter(Boolean).join(' · ');
+if (specs) body.appendChild(el('p', 'text-xs text-gray-500 mt-1', specs));
+if (product.match_reason) body.appendChild(el('p', 'text-xs text-gray-400 mt-1', product.match_reason));
+card.appendChild(body);
+const side = el('div', 'text-right flex-shrink-0');
+if (product.price_gbp) side.appendChild(el('p', 'text-lg text-black font-medium', '£' + product.price_gbp.toFixed(2)));
+side.appendChild(el('p', 'text-xs text-green-700', 'In stock'));
+side.appendChild(el('p', 'text-xs text-black mt-2 group-hover:underline', 'View →'));
+card.appendChild(side);
+recsContent.appendChild(card);
+});
+}
+</script>
 </body>
 </html>
