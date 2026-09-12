@@ -398,6 +398,15 @@ function checkImage(url) {
   });
 }
 
+// A page counts as being about this fan if every number in the model appears on it
+// ("MV EC 250" -> the page must say 250) along with one of the letter groups.
+function tokensOk(modelKey, flat) {
+  const nums = modelKey.match(/\d+/g) || [];
+  const words = (modelKey.match(/[A-Z]+/g) || []).filter(w => w.length >= 2);
+  if (!nums.length) return false;
+  return nums.every(n => flat.includes(n)) && (!words.length || words.some(w => flat.includes(w)));
+}
+
 // The image a manufacturer page shows — only if the page really is about this fan
 function pageImage(url, brand, modelKey) {
   return cached('page:' + url, async () => {
@@ -413,7 +422,7 @@ function pageImage(url, brand, modelKey) {
     const flat = html.toUpperCase().replace(/[^A-Z0-9]/g, '');
     const host = slug(new URL(url).host);
     const brandOk = !brand || host.includes(slug(brand)) || host.includes(slug(BRAND_DOMAIN[String(brand).toLowerCase()] || ''));
-    const modelOk = !modelKey || modelKey.length < 4 || flat.includes(modelKey);
+    const modelOk = !modelKey || modelKey.length < 4 || flat.includes(modelKey) || tokensOk(modelKey, flat);
     if (!brandOk || !modelOk) return null;
     return new URL(m[1], url).href;
   });
@@ -432,7 +441,8 @@ async function fanImage(fields, elta, recommendations) {
   const brand = fields.manufacturer || '';
   const candidates = [];
   if (elta && elta.url) candidates.push(['page', elta.url, null]);
-  if (fields.manufacturer_url) candidates.push(['page', fields.manufacturer_url, modelKey]);
+  const brandless = normModel(String(fields.model || '').replace(new RegExp(brand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'ig'), ' ')) || modelKey;
+  if (fields.manufacturer_url) candidates.push(['page', fields.manufacturer_url, brandless]);
   if (fields.product_image_url) candidates.push(['img', fields.product_image_url, null]);
   for (const [kind, url, key] of candidates) {
     try {
