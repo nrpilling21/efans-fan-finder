@@ -284,6 +284,8 @@ function getRecommendations(fields, elta) {
   // 3. Alternatives of the same fan type, ranked by size, airflow, motor and brand.
   // If we never worked out a size, same-type fans are still better than nothing.
   const typeOnly = !criteria.size_mm && !!criteria.type && !list.length;
+  const brandKey = b => String(b || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const wantBrand = brandKey(criteria.brand);
   if (criteria.size_mm || typeOnly) {
     const loose = [fields.model, fields.part_number].map(s => (s || '').toLowerCase().replace(/[\s-]/g, '')).filter(s => s.length >= 4);
     const scored = inStock.filter(p => !listed(p) && sameType(p)).map(p => {
@@ -300,19 +302,28 @@ function getRecommendations(fields, elta) {
       }
       if (criteria.motor_type && p.motor_type === criteria.motor_type) { score += 20; reasons.push('Same motor type'); }
       if (elta && elta.phase && p.phase === elta.phase) { score += 10; reasons.push(elta.phase === 1 ? 'Single phase' : 'Three phase'); }
-      if (criteria.brand && p.brand && p.brand.toLowerCase() === criteria.brand.toLowerCase()) { score += 10; reasons.push('Same brand'); }
+      const sameBrand = !!wantBrand && brandKey(p.brand) === wantBrand;
+      if (sameBrand) { score += 10; reasons.push('Same brand'); }
       if (criteria.type) reasons.unshift(criteria.type);
-      return { ...p, match_score: score, match_reasons: reasons };
+      // Duct size is a hard constraint — brand is a preference. Fans that physically
+      // fit rank above ones that don't, and within each group the customer's own
+      // brand comes first, then alternatives.
+      const fit = !criteria.size_mm || p.size_mm === criteria.size_mm ? 0
+        : (p.size_mm && Math.abs(p.size_mm - criteria.size_mm) <= 25 ? 1 : 2);
+      return { ...p, match_score: score, match_reasons: reasons, _fit: fit, _same_brand: sameBrand };
     })
     .filter(p => p.match_score >= 50)
-    .sort((a, b) => b.match_score - a.match_score);
+    .sort((a, b) => a._fit - b._fit
+      || (b._same_brand === true) - (a._same_brand === true)
+      || b.match_score - a.match_score);
 
     const seen = new Set(list.map(p => p.sku));
     for (const p of scored) {
       if (list.length >= 4) break;
       if (seen.has(p.sku)) continue; // the catalogue repeats a few SKUs
       seen.add(p.sku);
-      list.push({ ...p, match_type: 'similar', match_reason: p.match_reasons.join(' · ') });
+      const { _same_brand, _fit, ...rest } = p;
+      list.push({ ...rest, match_type: 'similar', match_reason: p.match_reasons.join(' · ') });
     }
     if (!matchType && list.length) matchType = 'similar';
   }
