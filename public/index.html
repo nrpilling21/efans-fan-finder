@@ -140,18 +140,22 @@ Add photo
 <h2 class="font-display text-3xl md:text-4xl text-black font-normal mb-10">A small label showing the make, model and specs.</h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border-t border-gray-200">
 <div class="py-6 lg:pr-6 border-b border-gray-200 lg:border-b-0">
+<img src="https://cdn.shopify.com/s/files/1/0355/3932/0965/files/systemair-aw-sileo-plate-axial-fan.jpg?v=1728990740" alt="" loading="lazy" class="w-full aspect-[4/3] object-contain bg-panel mb-4">
 <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Wall-mounted fans</p>
 <p class="text-sm text-gray-700">Behind the front grille or on the back of the unit. You may need to remove the cover.</p>
 </div>
 <div class="py-6 lg:px-6 border-b border-gray-200 lg:border-b-0 lg:border-l">
+<img src="https://cdn.shopify.com/s/files/1/0355/3932/0965/products/17110010.jpg?v=1589813092" alt="" loading="lazy" class="w-full aspect-[4/3] object-contain bg-panel mb-4">
 <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Inline / duct fans</p>
 <p class="text-sm text-gray-700">On the motor casing, visible from the side. Usually reachable without removing the fan.</p>
 </div>
 <div class="py-6 lg:px-6 border-b border-gray-200 lg:border-b-0 lg:border-l">
+<img src="https://cdn.shopify.com/s/files/1/0355/3932/0965/files/elta_ssdl200-1ec_singleflow_centrifugal_box_fan_7.1speed.jpg?v=1742475859" alt="" loading="lazy" class="w-full aspect-[4/3] object-contain bg-panel mb-4">
 <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">Centrifugal fans</p>
 <p class="text-sm text-gray-700">On the scroll housing or motor mount. Check the back and sides of the unit.</p>
 </div>
 <div class="py-6 lg:pl-6 lg:border-l border-gray-200">
+<img src="https://cdn.shopify.com/s/files/1/0355/3932/0965/products/sentinel_kinetic_plus_copy_0.jpg?v=1597437285" alt="" loading="lazy" class="w-full aspect-[4/3] object-contain bg-panel mb-4">
 <p class="text-xs uppercase tracking-wider text-gray-500 mb-2">MVHR units</p>
 <p class="text-sm text-gray-700">On a side panel, usually accessible from the loft or plant room.</p>
 </div>
@@ -415,9 +419,11 @@ return shown;
 }
 function showAiResult(fields) {
 aiResult.classList.remove('hidden');
-const fromElta = !!fields.elta_model;
-$('aiSourceChip').classList.toggle('hidden', !fromElta);
+// The chip only appears when the figures came from the manufacturer, not from the AI
+const fromElta = !!fields.elta_model, fromPage = !fromElta && !!fields.spec_source;
+$('aiSourceChip').classList.toggle('hidden', !(fromElta || fromPage));
 if (fromElta) $('aiFootnote').textContent = "Specifications from Elta's own product data. Check the model against your fan.";
+else if (fromPage) $('aiFootnote').textContent = 'Specifications read from ' + (fields.manufacturer || 'the manufacturer') + "'s own product page. Confirm the duty before ordering.";
 fieldRows(aiResultContent, KEY_FIELDS, fields);
 const more = $('aiMore');
 more.open = false;

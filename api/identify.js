@@ -428,25 +428,93 @@ function tokensOk(modelKey, flat) {
   return nums.every(n => flat.includes(n)) && (!words.length || words.some(w => flat.includes(w)));
 }
 
-// The image a manufacturer page shows — only if the page really is about this fan
-function pageImage(url, brand, modelKey) {
+// Fetch a page once; both the photo and the spec reader work from the same copy
+function pageHtml(url) {
   return cached('page:' + url, async () => {
     const r = await fetch(url, { signal: AbortSignal.timeout(4000),
       headers: { 'User-Agent': 'eFans-Fan-Finder/1.0' } });
     if (!r.ok) return null;
-    const html = (await r.text()).slice(0, 400000);
-    const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-              html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
-              html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
-    if (!m) return null;
-    // The page must mention the model, or be the manufacturer's own page for this range
-    const flat = html.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const host = slug(new URL(url).host);
-    const brandOk = !brand || host.includes(slug(brand)) || host.includes(slug(BRAND_DOMAIN[String(brand).toLowerCase()] || ''));
-    const modelOk = !modelKey || modelKey.length < 4 || flat.includes(modelKey) || tokensOk(modelKey, flat);
-    if (!brandOk || !modelOk) return null;
-    return new URL(m[1], url).href;
+    return (await r.text()).slice(0, 400000);
   });
+}
+
+// Is this page really about this fan? Optionally require the manufacturer's own domain.
+function isOwnDomain(url, brand) {
+  if (!brand) return false;
+  try {
+    const host = slug(new URL(url).host);
+    return host.includes(slug(brand)) || host.includes(slug(BRAND_DOMAIN[String(brand).toLowerCase()] || ''));
+  } catch (e) { return false; }
+}
+async function pageAbout(url, brand, modelKey) {
+  const html = await pageHtml(url);
+  if (!html) return null;
+  const flat = html.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const brandOk = !brand || isOwnDomain(url, brand);
+  const modelOk = !modelKey || modelKey.length < 4 || flat.includes(modelKey) || tokensOk(modelKey, flat);
+  return brandOk && modelOk ? html : null;
+}
+
+// The image a manufacturer page shows — only if the page really is about this fan
+async function pageImage(url, brand, modelKey) {
+  const html = await pageAbout(url, brand, modelKey);
+  if (!html) return null;
+  const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+            html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+            html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+  return m ? new URL(m[1], url).href : null;
+}
+
+// Specifications read off a manufacturer's own product page.
+// Deliberately strict: third-party listings for old fans carry transcribed and
+// mixed-up figures, and an undersized replacement is worse than saying "unknown".
+// So specs are only taken from the manufacturer's own domain, never from a reseller.
+const SPEC_PATTERNS = [
+  ['airflow_m3h', /([\d][\d,. ]{1,9})\s*m\s*[³3]\s*\/\s*h/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')))],
+  ['airflow_m3h', /([\d][\d,. ]{1,7})\s*l\s*\/\s*s\b/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')) * 3.6)],
+  ['size_mm', /(?:diameter|dia\.?|duct size|impeller)\D{0,15}?(\d{2,4})\s*mm/i, v => parseInt(v)],
+  // The currency guard stops a price ("£1,299 W. In stock") reading as a motor rating
+  ['power_w', /(?<![£$€\d.,])([\d][\d,. ]{0,7})\s*(?:W|watts)\b/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')))],
+  ['voltage', /\b(\d{3})\s*(?:V|volts)\b/i, v => v + 'V'],
+  ['ip_rating', /\b(IP\s?\d{2})\b/i, v => v.replace(/\s/g, '')],
+  ['max_pressure_pa', /([\d][\d,. ]{0,6})\s*Pa\b/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')))]
+];
+async function pageSpecs(url, brand, modelKey) {
+  if (!isOwnDomain(url, brand)) return null; // resellers are not a source of truth
+  const html = await pageAbout(url, brand, modelKey);
+  if (!html) return null;
+  // Strip markup so figures in tables and spec lists read as plain text
+  const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ');
+  const out = {};
+  for (const [key, re, cast] of SPEC_PATTERNS) {
+    if (out[key] != null) continue;
+    const m = text.match(re);
+    if (!m) continue;
+    const v = cast(m[1]);
+    if (v === 0 || Number.isNaN(v)) continue;
+    out[key] = v;
+  }
+  // Sanity bounds — a mis-parse is worse than no figure at all
+  if (out.airflow_m3h && (out.airflow_m3h < 20 || out.airflow_m3h > 200000)) delete out.airflow_m3h;
+  if (out.size_mm && (out.size_mm < 60 || out.size_mm > 2000)) delete out.size_mm;
+  if (out.power_w && (out.power_w < 3 || out.power_w > 50000)) delete out.power_w;
+  if (/\bEC\b/.test(text)) out.motor_type = 'EC';
+  return Object.keys(out).length ? out : null;
+}
+
+// Find specs for a fan we have no data of our own for, from the maker's own site
+async function searchSpecs(fields) {
+  const brand = fields.manufacturer || '';
+  const model = fields.model || fields.part_number;
+  if (!brand || !model) return null;
+  for (const url of await searchProductPages(brand, model)) {
+    try {
+      const specs = await pageSpecs(url, brand, normModel(model));
+      if (specs) { specs._url = url; return specs; }
+    } catch (e) { /* try the next result */ }
+  }
+  return null;
 }
 
 // Ask a web search which page on the manufacturer's own site is this product.
@@ -643,6 +711,31 @@ Return ONLY the JSON object, no other text.` });
         if (eq) cleaned.current_equivalent = eq.model;
       }
     }
+    // No manufacturer data of our own for this fan (everything except Elta, and any
+    // fan we don't stock): look for the maker's own product page and read the specs
+    // off it. Anything the AI guessed is dropped first — a verified figure or none.
+    if (!elta) {
+      const stocked = products.find(p => normModel(p.sku) === normModel(cleaned.model || cleaned.part_number));
+      if (!stocked) {
+        const found = await searchSpecs(cleaned);
+        if (found) {
+          for (const k of ['airflow', 'power', 'voltage', 'ip_rating', 'max_pressure']) delete cleaned[k];
+          delete cleaned.estimated_specs;
+          if (found.airflow_m3h) {
+            cleaned.airflow = found.airflow_m3h + ' m³/h max';
+            cleaned.estimated_airflow_m3h = found.airflow_m3h;
+          }
+          if (found.size_mm && !cleaned.size_mm) cleaned.size_mm = found.size_mm;
+          if (found.power_w) cleaned.power = found.power_w + 'W';
+          if (found.voltage) cleaned.voltage = found.voltage;
+          if (found.ip_rating) cleaned.ip_rating = found.ip_rating;
+          if (found.max_pressure_pa) cleaned.max_pressure = found.max_pressure_pa + ' Pa';
+          cleaned.manufacturer_url = found._url;
+          cleaned.spec_source = 'manufacturer page';
+        }
+      }
+    }
+
     let recommendations = getRecommendations(cleaned, elta);
 
     // Website search if nothing in the catalogue matched
