@@ -673,14 +673,22 @@ Return ONLY the JSON object, no other text.` });
     let cleaned = null;
 
     if (data.content && data.content[0] && data.content[0].text) {
-      const text = data.content[0].text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      const raw = data.content[0].text.trim();
+      // Take the JSON object out of the reply rather than demanding the whole reply
+      // be JSON: a code fence or a line of preamble used to fail the parse silently
+      // and drop us back to "just the model", which is indistinguishable from a
+      // failed identification on screen.
+      const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+      const body = (fenced ? fenced[1] : raw).trim();
+      const braced = body.slice(body.indexOf('{'), body.lastIndexOf('}') + 1);
       try {
-        const fields = JSON.parse(text);
+        const fields = JSON.parse(braced || body);
         cleaned = {};
         for (const [k, v] of Object.entries(fields)) {
           if (v !== null && v !== '' && v !== 'null' && v !== 'N/A') cleaned[k] = v;
         }
       } catch (parseErr) {
+        console.error('Could not parse AI reply:', raw.slice(0, 300));
         if (!typed) return res.status(200).json({ success: false, error: 'Could not parse AI response' });
       }
     } else {
