@@ -214,6 +214,17 @@ function identifiedType(fields, elta) {
   return { 'plate-axial-fan': 'Plate Axial', 'inline-duct-fan': 'Duct Fan', 'mixed-flow-fan': 'Duct Fan', 'roof-fan': 'Roof Fan' }[slug] || null;
 }
 
+// The Shopify vendor field is the supplier, not always the badge on the fan:
+// Hydor products are sold to us by Elta Group, so they carry "Elta" as the vendor.
+// The customer sees the name, so match on the brand the name leads with when we know it.
+const brandKey = b => String(b || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+let knownBrands = null;
+function productBrand(p) {
+  if (!knownBrands) knownBrands = new Set(products.map(x => brandKey(x.brand)).filter(Boolean));
+  const lead = brandKey(String(p.name || '').split(/[\s\-]/)[0]);
+  return lead && knownBrands.has(lead) ? lead : brandKey(p.brand);
+}
+
 function getRecommendations(fields, elta) {
   if (!products.length) return { match_type: 'none', recommendations: [], message: "Product catalogue not loaded." };
 
@@ -284,7 +295,6 @@ function getRecommendations(fields, elta) {
   // 3. Alternatives of the same fan type, ranked by size, airflow, motor and brand.
   // If we never worked out a size, same-type fans are still better than nothing.
   const typeOnly = !criteria.size_mm && !!criteria.type && !list.length;
-  const brandKey = b => String(b || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const wantBrand = brandKey(criteria.brand);
   if (criteria.size_mm || typeOnly) {
     const loose = [fields.model, fields.part_number].map(s => (s || '').toLowerCase().replace(/[\s-]/g, '')).filter(s => s.length >= 4);
@@ -302,7 +312,7 @@ function getRecommendations(fields, elta) {
       }
       if (criteria.motor_type && p.motor_type === criteria.motor_type) { score += 20; reasons.push('Same motor type'); }
       if (elta && elta.phase && p.phase === elta.phase) { score += 10; reasons.push(elta.phase === 1 ? 'Single phase' : 'Three phase'); }
-      const sameBrand = !!wantBrand && brandKey(p.brand) === wantBrand;
+      const sameBrand = !!wantBrand && productBrand(p) === wantBrand;
       if (sameBrand) { score += 10; reasons.push('Same brand'); }
       if (criteria.type) reasons.unshift(criteria.type);
       // Duct size is a hard constraint — brand is a preference. Fans that physically
