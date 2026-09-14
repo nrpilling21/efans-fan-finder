@@ -437,7 +437,7 @@ exact: ['Exact match', 'We stock this fan', 'We have your exact model, plus alte
 elta_equivalent: ['Superseded model', 'Current Elta equivalent', 'Your fan has been superseded. This is the current model that replaces it:'],
 cross_reference: ['Verified', 'Verified replacement', 'We stock a confirmed replacement for your fan:'],
 shopify: ['On efans.co.uk', 'Products found on eFans', 'We found these related products on our website:'],
-similar: ['Recommended', 'Recommended replacements', 'Same type and size \u2014 your own brand first, then the closest alternatives:']
+similar: ['Recommended', n => n + ' alternative replacement' + (n === 1 ? '' : 's') + ' found', 'Same type and size \u2014 your own brand first, then the closest alternatives:']
 };
 const CARD_CHIP = { exact: 'Exact match', elta_equivalent: 'Current equivalent', cross_reference: 'Verified replacement', shopify: 'Website match', similar: 'Same type' };
 function showRecommendations(recData) {
@@ -452,7 +452,8 @@ return;
 recsFound.classList.remove('hidden');
 const copy = MATCH_COPY[recData.match_type] || MATCH_COPY.similar;
 recsEyebrow.textContent = copy[0];
-recsTitle.textContent = copy[1];
+// a title may be a function of how many we found ("3 alternative replacements found")
+recsTitle.textContent = typeof copy[1] === 'function' ? copy[1](recData.recommendations.length) : copy[1];
 recsSubtitle.textContent = copy[2];
 recData.recommendations.forEach(product => {
 const hl = product.highlight;
