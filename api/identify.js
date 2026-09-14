@@ -525,8 +525,8 @@ async function searchProductPages(brand, model) {
   const hasBrand = brand && slug(model).startsWith(slug(brand));
   const q = (hasBrand ? String(model) : [brand, model].filter(Boolean).join(' ')).trim();
   if (!q.trim()) return [];
-  const brave = process.env.BRAVE_SEARCH_API_KEY;
-  const gKey = process.env.GOOGLE_CSE_KEY, gCx = process.env.GOOGLE_CSE_CX;
+  const brave = (process.env.BRAVE_SEARCH_API_KEY || '').trim();
+  const gKey = (process.env.GOOGLE_CSE_KEY || '').trim(), gCx = (process.env.GOOGLE_CSE_CX || '').trim();
   return cached('search:' + q, async () => {
     let urls = [];
     if (brave) {
@@ -597,7 +597,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Provide a photo or type the fan model' });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  // Trim: a stray newline or space picked up when the key was copied makes the
+  // header malformed, and Anthropic answers "API key is invalid." with a null
+  // request_id, which reads exactly like a wrong key and wastes an afternoon.
+  const apiKey = (process.env.ANTHROPIC_API_KEY || '').trim();
   if (!apiKey) {
     return res.status(500).json({ success: false, error: 'API key not configured' });
   }
