@@ -99,9 +99,14 @@ Add photo
 <p class="text-sm text-gray-600">Try a clearer photo or type the model instead &mdash; or call <a href="tel:01204263014" class="text-black underline">01204 263014</a> and we'll identify it for you.</p>
 </div>
 <div id="aiResult" class="hidden fade-in border border-gray-200 mb-8">
-<div class="flex items-center justify-between px-6 pt-6 pb-4">
-<p class="eyebrow">Fan identified</p>
-<span id="aiSourceChip" class="hidden bg-gray-100 text-gray-700 text-xs rounded-full px-3 py-1">Manufacturer data</span>
+<div class="flex items-center justify-between gap-4 px-6 pt-6 pb-5">
+<div class="flex items-center gap-3">
+<span class="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center flex-shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+</span>
+<p class="text-base font-medium text-black">We&rsquo;ve identified your fan</p>
+</div>
+<span id="aiSourceChip" class="hidden bg-gray-100 text-gray-700 text-xs rounded-full px-3 py-1 flex-shrink-0">Manufacturer data</span>
 </div>
 <dl id="aiResultContent" class="px-6 grid grid-cols-1 sm:grid-cols-2 gap-x-8"></dl>
 <div id="aiImageSection" class="hidden px-6 pt-4">
@@ -110,7 +115,11 @@ Add photo
 <a id="aiManufLink" href="#" target="_blank" rel="noopener" class="hidden text-sm text-black underline">View on manufacturer website &rarr;</a>
 </div>
 </div>
-<p class="px-6 py-4 text-xs text-gray-400" id="aiFootnote">AI-assisted reading. Check the details against your plate.</p>
+<details id="aiMore" class="hidden border-t border-gray-200 mt-4">
+<summary class="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium text-black">See more details<span class="faq-plus text-xl text-gray-500">+</span><span class="faq-minus text-xl text-gray-500">&minus;</span></summary>
+<dl id="aiMoreContent" class="px-6 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-x-8"></dl>
+</details>
+<p class="px-6 py-4 text-xs text-gray-400 border-t border-gray-200" id="aiFootnote">AI-assisted reading. Check the details against your plate.</p>
 </div>
 <div id="recommendations" class="hidden fade-in">
 <div id="recsFound" class="hidden">
@@ -381,25 +390,38 @@ showAiResult(data.fields);
 showRecommendations(data.recommendations || { match_type: 'none', recommendations: [] });
 }
 
-const FIELD_LABELS = {
-manufacturer: 'Manufacturer', model: 'Model', range: 'Range', part_number: 'Part / SKU',
-voltage: 'Voltage', power: 'Power', current: 'Current', airflow: 'Airflow', max_pressure: 'Max pressure',
-speed: 'Speed (RPM)', ip_rating: 'IP rating', frequency: 'Frequency', date: 'Date',
-current_equivalent: 'Current equivalent', notes: 'Notes'
+// What an engineer needs at a glance; everything else sits behind "See more details"
+const KEY_FIELDS = {
+manufacturer: 'Manufacturer', model: 'Model', airflow: 'Airflow', current_equivalent: 'Current equivalent'
 };
+const MORE_FIELDS = {
+range: 'Range', part_number: 'Part / SKU', size_mm: 'Size', voltage: 'Voltage', power: 'Power',
+current: 'Current', max_pressure: 'Max pressure', speed: 'Speed (RPM)', ip_rating: 'IP rating',
+frequency: 'Frequency', date: 'Date', notes: 'Notes'
+};
+function fieldRows(target, labels, fields) {
+target.innerHTML = '';
+let shown = 0;
+for (const [key, label] of Object.entries(labels)) {
+if (!fields[key]) continue;
+const value = key === 'size_mm' ? fields[key] + 'mm' : String(fields[key]);
+const row = el('div', 'py-3 border-t border-gray-200' + (key === 'notes' ? ' sm:col-span-2' : ''));
+row.appendChild(el('dt', 'text-xs uppercase tracking-wider text-gray-500 mb-1', label));
+row.appendChild(el('dd', key === 'notes' ? 'text-sm text-gray-700' : 'text-sm text-black font-medium', value));
+target.appendChild(row);
+shown++;
+}
+return shown;
+}
 function showAiResult(fields) {
 aiResult.classList.remove('hidden');
-aiResultContent.innerHTML = '';
 const fromElta = !!fields.elta_model;
 $('aiSourceChip').classList.toggle('hidden', !fromElta);
 if (fromElta) $('aiFootnote').textContent = "Specifications from Elta's own product data. Check the model against your fan.";
-for (const [key, label] of Object.entries(FIELD_LABELS)) {
-if (!fields[key]) continue;
-const row = el('div', 'py-3 border-t border-gray-200' + (key === 'notes' ? ' sm:col-span-2' : ''));
-row.appendChild(el('dt', 'text-xs uppercase tracking-wider text-gray-500 mb-1', label));
-row.appendChild(el('dd', key === 'notes' ? 'text-sm text-gray-700' : 'text-sm text-black font-medium', String(fields[key])));
-aiResultContent.appendChild(row);
-}
+fieldRows(aiResultContent, KEY_FIELDS, fields);
+const more = $('aiMore');
+more.open = false;
+more.classList.toggle('hidden', fieldRows($('aiMoreContent'), MORE_FIELDS, fields) === 0);
 const link = $('aiManufLink'), photo = $('aiFanImage');
 $('aiImageSection').classList.toggle('hidden', !(fields.manufacturer_url || fields.product_image_url));
 photo.classList.toggle('hidden', !fields.product_image_url);
