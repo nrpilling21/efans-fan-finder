@@ -214,18 +214,28 @@ function productType(p) {
 }
 
 // The identified fan's type, in the same terms as the catalogue
+// Fans that are specified for a duty no general-purpose fan can stand in for:
+// smoke extract carries a fire rating, car park jet fans are sized on thrust
+// rather than duct airflow, and marine fans are built to a different standard.
+// Matching these on size and airflow would produce something that looks right
+// and is not, so the tool declines and hands them to a person.
+function isSpecialist(elta) {
+  return !!elta && /smoke|f400|jetvent|jet fan|impulse|induction|marine/i.test(elta.family + ' ' + elta.range);
+}
+
 function identifiedType(fields, elta) {
   if (elta) {
+    if (isSpecialist(elta)) return null;
     const f = elta.family || '';
     if (/roof/i.test(f)) return 'Roof Fan';
     if (/plate/i.test(f)) return 'Plate Axial';
     if (/duct|cased|contra|bifurcated/i.test(f) && /axial/i.test(f)) return 'Cased Axial';
     if (/box/i.test(f)) return 'Box Fan';
-    if (/inline|multiflow|jetflow|sel |sem /i.test(f + ' ')) return 'Duct Fan';
-    if (/mvhr/i.test(f)) return 'Whole House';
+    if (/inline|multiflow|jetflow|miniflow|sel |sem /i.test(f + ' ')) return 'Duct Fan';
+    if (/mvhr|energy recovery|heat recovery/i.test(f)) return 'Whole House';
     if (/supply & extract/i.test(f)) return 'Single Room';
     if (/piv/i.test(f)) return 'PIV';
-    if (/wall fan/i.test(f)) return 'Axial Fan';
+    if (/wall fan|residential axial/i.test(f)) return 'Axial Fan';
     return null;
   }
   const ft = String(fields.fan_type || '').toLowerCase();
@@ -448,10 +458,29 @@ function getRecommendations(fields, elta) {
   if (!list.length) {
     // Say which requirement nothing met, so "no match" reads as a considered answer
     // rather than a shrug — and so the team picking it up knows where to start.
-    let message = "We couldn't find an automatic match, but don't worry — our team can help.";
-    if (!criteria.type) message = "We couldn't tell what type of fan this is from what you gave us. Send us a photo of the ID plate or the model number and we'll identify it.";
-    else if (criteria.airflow_m3h) message = "Nothing we stock in this duct size matches " + criteria.type.toLowerCase() +
-      " at " + criteria.airflow_m3h + " m³/h or above. Our team can source one — we'd rather say that than send you something undersized.";
+    // Internal type names are not how anyone describes a fan out loud
+    const SPOKEN = { 'Whole House': 'heat recovery unit', 'Single Room': 'single-room heat recovery unit',
+                     'PIV': 'positive input ventilation unit', 'Plate Axial': 'plate axial fan',
+                     'Cased Axial': 'cased axial fan', 'Duct Fan': 'duct fan', 'Box Fan': 'box fan',
+                     'Roof Fan': 'roof fan', 'Axial Fan': 'axial fan' };
+    const kind = SPOKEN[criteria.type] || (criteria.type || 'fan').toLowerCase();
+    const identified = !!(elta || original);
+    let message = "We couldn't match this one automatically.";
+    if (isSpecialist(elta)) {
+      message = 'We’ve identified your fan as ' + elta.model + ', from Elta’s ' + elta.range +
+        ' range. This is a specialist fan — smoke extract, jet and marine fans are specified on more than airflow, so we won’t suggest a substitute automatically. Our team will match it properly.';
+    } else if (!criteria.type && identified) {
+      message = 'We’ve identified your fan as ' + ((elta && elta.model) || (original && original.name)) +
+        ', but it’s not a type we can match automatically yet. Our team can source it.';
+    } else if (!criteria.type) {
+      message = "We couldn't tell what type of fan this is from what you sent. A photo of the ID plate usually settles it.";
+    } else if (criteria.airflow_m3h && criteria.size_mm) {
+      message = "We found your fan, but nothing we stock is a safe like-for-like: we'd need a " + criteria.size_mm +
+        "mm " + kind + " moving at least " + criteria.airflow_m3h.toLocaleString('en-GB') +
+        " m³/h. We'd rather tell you that than send you something undersized — we can source the right one.";
+    } else if (criteria.size_mm) {
+      message = "We found your fan, but we don't stock a " + criteria.size_mm + "mm " + kind + " we're confident is a match.";
+    }
     return { match_type: 'none', criteria, recommendations: [], message };
   }
   return { match_type: matchType, criteria, recommendations: list };

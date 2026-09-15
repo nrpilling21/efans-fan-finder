@@ -131,7 +131,8 @@ Add photo
 </div>
 <div id="recsNone" class="hidden border border-gray-200 bg-panel p-6">
 <p class="text-black font-medium mb-1">We'll find your replacement</p>
-<p class="text-sm text-gray-600">We couldn't match this automatically, but our team has 40+ years of experience matching fans. Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email your photo to <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a>.</p>
+<p id="recsNoneWhy" class="text-sm text-gray-600 mb-2 hidden"></p>
+<p class="text-sm text-gray-600">Our team has 40+ years of experience matching fans. Call <a href="tel:01204263014" class="text-black underline">01204 263014</a> or email your photo to <a href="mailto:hello@efans.co.uk" class="text-black underline">hello@efans.co.uk</a>.</p>
 </div>
 </div>
 </section>
@@ -452,6 +453,12 @@ recsFound.classList.add('hidden');
 recsNone.classList.add('hidden');
 recsContent.innerHTML = '';
 if (recData.match_type === 'none' || !recData.recommendations || !recData.recommendations.length) {
+// Say what we looked for and why nothing met it. "No match" from a tool that
+// has just read the plate correctly should read as a considered answer, not a
+// failure — and it tells whoever picks up the call where to start.
+const why = $('recsNoneWhy');
+why.textContent = recData.message || '';
+why.classList.toggle('hidden', !recData.message);
 recsNone.classList.remove('hidden');
 return;
 }
