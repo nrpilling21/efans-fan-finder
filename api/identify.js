@@ -586,6 +586,44 @@ async function fanImage(fields, elta, recommendations) {
 // === Main Handler ===
 
 export default async function handler(req, res) {
+  // TEMPORARY diagnostic: GET ?diag=<model>&brand=<brand> shows where the spec
+  // lookup gives up. Remove once the manufacturer-page reader is proven.
+  if (req.method === 'GET' && req.query && req.query.diag) {
+    const brand = String(req.query.brand || 'Helios');
+    const model = String(req.query.diag);
+    const key = (process.env.BRAVE_SEARCH_API_KEY || '').trim();
+    const out = { brave_key_len: key.length, brand, model, model_key: normModel(model) };
+    if (!key) { out.stopped_at = 'no BRAVE_SEARCH_API_KEY in this environment'; return res.status(200).json(out); }
+    const hasBrand = slug(model).startsWith(slug(brand));
+    const q = (hasBrand ? model : [brand, model].filter(Boolean).join(' ')).trim();
+    out.query = q;
+    try {
+      const r = await fetch('https://api.search.brave.com/res/v1/web/search?count=10&q=' + encodeURIComponent(q),
+        { signal: AbortSignal.timeout(6000), headers: { 'Accept': 'application/json', 'X-Subscription-Token': key } });
+      out.brave_status = r.status;
+      const body = await r.text();
+      if (!r.ok) { out.brave_body = body.slice(0, 400); out.stopped_at = 'brave rejected the request'; return res.status(200).json(out); }
+      const d = JSON.parse(body);
+      out.results = ((d.web && d.web.results) || []).map(x => x.url).slice(0, 10);
+    } catch (e) { out.brave_error = String(e && e.message); out.stopped_at = 'brave call threw'; return res.status(200).json(out); }
+    out.pages = [];
+    for (const url of out.results.slice(0, 5)) {
+      const row = { url, own_domain: isOwnDomain(url, brand) };
+      try {
+        const html = await pageHtml(url);
+        row.fetched = !!html;
+        if (html) {
+          const flat = html.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          row.model_literal = flat.includes(normModel(model));
+          row.tokens_ok = tokensOk(normModel(model), flat);
+          row.specs = await pageSpecs(url, brand, normModel(model));
+        }
+      } catch (e) { row.error = String(e && e.message); }
+      out.pages.push(row);
+    }
+    return res.status(200).json(out);
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
