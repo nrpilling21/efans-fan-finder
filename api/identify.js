@@ -262,10 +262,20 @@ function productBrand(p) {
 }
 
 // Single-phase or three-phase, from whatever the plate or the typed text gave us.
+//
+// Supply voltage is NOT a phase indicator, though it reads like one. An ID plate
+// carries the run capacitor's voltage rating too — "30uF/400V", "Cap 25µF 400V" —
+// and reading that 400V as a three-phase supply turned two single-phase fans in
+// testing into four three-phase recommendations each, none of which could be
+// fitted. Elta also sell 230V three-phase fans, so 230V does not mean single
+// either. Only the explicit phase notation counts.
 function parsePhase(fields) {
   const t = [fields.phase, fields.voltage, fields.model, fields.notes].filter(Boolean).join(' ');
-  if (/\b(3|three)[\s-]*(ph|phase)|\b3~|\b400\s*v/i.test(t)) return 3;
-  if (/\b(1|single)[\s-]*(ph|phase)|\b1~|\b230\s*v/i.test(t)) return 1;
+  if (/\b3\s*~|\b3\s*-?\s*(ph\b|phase)|three[\s-]*phase/i.test(t)) return 3;
+  if (/\b1\s*~|\b1\s*-?\s*(ph\b|phase)|single[\s-]*phase/i.test(t)) return 1;
+  // A run capacitor is only ever fitted to a single-phase induction motor, so a
+  // capacitance on the plate settles it where the notation is missing.
+  if (/\d+([.,]\d+)?\s*[µu]F\b|\bcapacit|\bcap\s*\d/i.test(t)) return 1;
   return null;
 }
 
@@ -930,19 +940,29 @@ Return ONLY the JSON object, no other text.` });
       if (!stocked) {
         const found = await searchSpecs(cleaned);
         if (found) {
-          for (const k of ['airflow', 'power', 'voltage', 'ip_rating', 'max_pressure']) delete cleaned[k];
-          delete cleaned.estimated_specs;
-          if (found.airflow_m3h) {
+          // A figure read off the plate describes the fan actually on the wall;
+          // the maker's page describes whatever they sell under that name today,
+          // which for an old fan is often a revised model. So from a photo the
+          // plate wins and the page only fills gaps — it was quietly replacing a
+          // plate's 0.22 kW with 170 W off the current datasheet. From typed text
+          // there is no plate, only the AI's guesses, so the page replaces them.
+          const fromPlate = !!image;
+          const keep = k => fromPlate && cleaned[k];
+          for (const k of ['airflow', 'power', 'voltage', 'ip_rating', 'max_pressure']) {
+            if (!keep(k)) delete cleaned[k];
+          }
+          if (!fromPlate) delete cleaned.estimated_specs;
+          if (found.airflow_m3h && !cleaned.airflow) {
             cleaned.airflow = found.airflow_m3h + ' m³/h max';
             cleaned.estimated_airflow_m3h = found.airflow_m3h;
           }
           if (found.size_mm && !cleaned.size_mm) cleaned.size_mm = found.size_mm;
-          if (found.power_w) cleaned.power = found.power_w + 'W';
-          if (found.voltage) cleaned.voltage = found.voltage;
-          if (found.ip_rating) cleaned.ip_rating = found.ip_rating;
-          if (found.max_pressure_pa) cleaned.max_pressure = found.max_pressure_pa + ' Pa';
+          if (found.power_w && !cleaned.power) cleaned.power = found.power_w + 'W';
+          if (found.voltage && !cleaned.voltage) cleaned.voltage = found.voltage;
+          if (found.ip_rating && !cleaned.ip_rating) cleaned.ip_rating = found.ip_rating;
+          if (found.max_pressure_pa && !cleaned.max_pressure) cleaned.max_pressure = found.max_pressure_pa + ' Pa';
           cleaned.manufacturer_url = found._url;
-          cleaned.spec_source = 'manufacturer page';
+          cleaned.spec_source = fromPlate ? 'plate, with gaps filled from the manufacturer page' : 'manufacturer page';
         }
       }
     }
