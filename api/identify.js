@@ -478,36 +478,90 @@ async function pageImage(url, brand, modelKey) {
 // Deliberately strict: third-party listings for old fans carry transcribed and
 // mixed-up figures, and an undersized replacement is worse than saying "unknown".
 // So specs are only taken from the manufacturer's own domain, never from a reseller.
-const SPEC_PATTERNS = [
-  ['airflow_m3h', /([\d][\d,. ]{1,9})\s*m\s*[³3]\s*\/\s*h/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')))],
-  ['airflow_m3h', /([\d][\d,. ]{1,7})\s*l\s*\/\s*s\b/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')) * 3.6)],
-  ['size_mm', /(?:diameter|dia\.?|duct size|impeller)\D{0,15}?(\d{2,4})\s*mm/i, v => parseInt(v)],
-  // The currency guard stops a price ("£1,299 W. In stock") reading as a motor rating
-  ['power_w', /(?<![£$€\d.,])([\d][\d,. ]{0,7})\s*(?:W|watts)\b/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')))],
-  ['voltage', /\b(\d{3})\s*(?:V|volts)\b/i, v => v + 'V'],
-  ['ip_rating', /\b(IP\s?\d{2})\b/i, v => v.replace(/\s/g, '')],
-  ['max_pressure_pa', /([\d][\d,. ]{0,6})\s*Pa\b/i, v => Math.round(parseFloat(v.replace(/[, ]/g, '')))]
-];
-async function pageSpecs(url, brand, modelKey) {
+// A figure on a spec page may be written either way round: "1,470.5" (English)
+// or "1.470,5" (German). Guess wrong and you silently divide by a thousand —
+// which is how "70.000 m3/h" became 70.
+function parseNum(raw) {
+  let t = String(raw).replace(/\s/g, '');
+  const dot = t.lastIndexOf('.'), comma = t.lastIndexOf(',');
+  if (dot >= 0 && comma >= 0) {
+    // whichever separator comes last is the decimal point
+    t = comma > dot ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  } else if (comma >= 0) {
+    t = /^\d{1,3}(,\d{3})+$/.test(t) ? t.replace(/,/g, '') : t.replace(',', '.');
+  } else if (dot >= 0) {
+    if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  }
+  const v = parseFloat(t);
+  return Number.isFinite(v) ? v : null;
+}
+
+// Read a figure that sits behind its own label. This is the part that matters:
+// the first "m3/h" on a manufacturer's page is usually a navigation item
+// ("roof fans up to 70,000 m3/h"), not the fan you asked about.
+const NUM = '([0-9][0-9.,\\s]{0,11}?)';
+function labelled(text, labels, unit) {
+  for (const label of labels) {
+    const m = text.match(new RegExp(label + '[^:]{0,40}?:\\s*' + NUM + '\\s*' + unit, 'i'));
+    if (m) { const v = parseNum(m[1]); if (v != null) return v; }
+  }
+  return null;
+}
+
+const M3H = 'm\\s*[³_3]\\s*/\\s*h';
+const AIRFLOW_LABELS = ['Luftleistung', 'Volumenstrom', 'Nennluftstrom', 'Luftvolumenstrom', 'Fördervolumen',
+  'air\\s*flow', 'airflow', 'volume\\s*flow', 'air\\s*volume', 'flow\\s*rate', 'duty', 'capacity'];
+const POWER_LABELS = ['Nennleistung', 'Leistungsaufnahme', 'Motorleistung', 'Leistung',
+  'power\\s*(?:input|consumption|rating)?', 'motor\\s*power', 'rated\\s*power', 'wattage'];
+const VOLT_LABELS = ['Spannung', 'Nennspannung', 'voltage', 'supply\\s*voltage', 'supply'];
+const SIZE_LABELS = ['Anschluss\\s*DN', 'Nennweite', 'Anschluss', 'duct\\s*size', 'duct\\s*diameter',
+  'diameter', 'spigot', 'connection'];
+
+// Specifications read off a manufacturer's own product page.
+// Deliberately strict: third-party listings for old fans carry transcribed and
+// mixed-up figures, and an undersized replacement is worse than saying "unknown".
+// So specs are only taken from the manufacturer's own domain, never from a reseller,
+// and only where the page labels what the number means.
+async function pageSpecs(url, brand, modelKey, expected) {
   if (!isOwnDomain(url, brand)) return null; // resellers are not a source of truth
   const html = await pageAbout(url, brand, modelKey);
   if (!html) return null;
   // Strip markup so figures in tables and spec lists read as plain text
   const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ');
+    .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&#179;/gi, '³').replace(/\s+/g, ' ');
   const out = {};
-  for (const [key, re, cast] of SPEC_PATTERNS) {
-    if (out[key] != null) continue;
-    const m = text.match(re);
-    if (!m) continue;
-    const v = cast(m[1]);
-    if (v === 0 || Number.isNaN(v)) continue;
-    out[key] = v;
-  }
+
+  let air = labelled(text, AIRFLOW_LABELS, M3H);
+  if (air == null) { const ls = labelled(text, AIRFLOW_LABELS, 'l\\s*/\\s*s\\b'); if (ls != null) air = ls * 3.6; }
+  if (air != null) out.airflow_m3h = Math.round(air);
+
+  const w = labelled(text, POWER_LABELS, '(?:W|watts)\\b');
+  if (w != null) out.power_w = Math.round(w);
+
+  const v = labelled(text, VOLT_LABELS, '(?:V|volts)\\b');
+  if (v != null) out.voltage = Math.round(v) + 'V';
+
+  const dn = labelled(text, SIZE_LABELS, 'mm\\b');
+  if (dn != null) out.size_mm = Math.round(dn);
+
+  const ip = text.match(/(?:Schutzart\s*IP|IP[-\s]?(?:rating|class)|Schutzart)[^:]{0,20}?:\s*(\d{2})\b/i) ||
+             text.match(/\bIP\s?(\d{2})\b/);
+  if (ip) out.ip_rating = 'IP' + ip[1];
+
+  const pa = labelled(text, ['Druck', 'Pressung', 'pressure', 'static\\s*pressure'], 'Pa\\b');
+  if (pa != null) out.max_pressure_pa = Math.round(pa);
+
   // Sanity bounds — a mis-parse is worse than no figure at all
   if (out.airflow_m3h && (out.airflow_m3h < 20 || out.airflow_m3h > 200000)) delete out.airflow_m3h;
   if (out.size_mm && (out.size_mm < 60 || out.size_mm > 2000)) delete out.size_mm;
   if (out.power_w && (out.power_w < 3 || out.power_w > 50000)) delete out.power_w;
+  if (out.max_pressure_pa && (out.max_pressure_pa < 5 || out.max_pressure_pa > 10000)) delete out.max_pressure_pa;
+
+  // Last guard: if we already had a rough idea of the duty and the page disagrees
+  // by more than fivefold, one of the two is junk. Say nothing rather than guess.
+  const est = expected && expected.airflow_m3h;
+  if (out.airflow_m3h && est && (out.airflow_m3h > est * 5 || out.airflow_m3h < est / 5)) delete out.airflow_m3h;
+
   if (/\bEC\b/.test(text)) out.motor_type = 'EC';
   return Object.keys(out).length ? out : null;
 }
@@ -519,7 +573,7 @@ async function searchSpecs(fields) {
   if (!brand || !model) return null;
   for (const url of await searchProductPages(brand, model)) {
     try {
-      const specs = await pageSpecs(url, brand, normModel(model));
+      const specs = await pageSpecs(url, brand, normModel(model), { airflow_m3h: fields.estimated_airflow_m3h });
       if (specs) { specs._url = url; return specs; }
     } catch (e) { /* try the next result */ }
   }
