@@ -23,12 +23,35 @@ function normModel(s) {
   return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
-// Give stocked Elta products real airflow figures (the Shopify export has none),
-// so the airflow part of the scoring can actually work.
+// === Specifications normalised out of the Shopify pdp_specifications metafield ===
+// The catalogue export carries no duty figures at all, which left the "does this
+// replacement actually move enough air" test unanswerable for four products in
+// five. The figures were there the whole time, just under a dozen different label
+// spellings; scripts/build_specs.mjs normalises them. Rebuild it when the
+// catalogue changes.
+let shopifySpecs = {};
+try {
+  shopifySpecs = JSON.parse(readFileSync(join(process.cwd(), 'data', 'shopify_specs.json'), 'utf8'));
+} catch (e) {
+  console.warn('Could not load Shopify specs:', e.message);
+}
+
+// Give stocked products their real figures: Shopify first, then Elta's own
+// selection data, which is the better source for the Elta range.
 for (const p of products) {
-  if (p.airflow_m3h) continue;
+  const s = shopifySpecs[String(p.sku)];
+  if (s) {
+    if (!p.airflow_m3h && s.airflow_m3h) p.airflow_m3h = s.airflow_m3h;
+    if (!p.size_mm && s.size_mm) p.size_mm = s.size_mm;
+    if (!p.phase && s.phase) p.phase = s.phase;
+    if (!p.poles && s.poles) p.poles = s.poles;
+  }
   const m = eltaByKey.get(normModel(p.sku));
-  if (m && m.airflow_m3h) p.airflow_m3h = m.airflow_m3h;
+  if (m) {
+    if (m.airflow_m3h) p.airflow_m3h = m.airflow_m3h;
+    if (m.poles && !p.poles) p.poles = m.poles;
+    if (m.phase && !p.phase) p.phase = m.phase;
+  }
 }
 
 // Find the Elta model a plate reading refers to. Exact code match first, then a
@@ -56,15 +79,18 @@ function findEltaModel(fields) {
   return null;
 }
 
-// Current Elta models that could replace a superseded one: same kind of fan,
-// same duct size and supply, and at least ~85% of the airflow.
+// Current Elta models that could replace a superseded one: same kind of fan, same
+// duct size and supply, and at least the airflow of the fan coming out. The old
+// 85% allowance meant a "direct replacement" could quietly under-perform the fan
+// it replaced, which is the one thing a replacement must not do.
 function eltaEquivalents(old) {
   const sameFamilyWord = (a, b) => (a || '').split(' ')[0] === (b || '').split(' ')[0];
   const prefix = s => (s.match(/^[A-Z]+/) || [''])[0];
   return eltaModels
     .filter(m => m.current && m.key !== old.key && m.category === old.category &&
       m.size_mm === old.size_mm && (!old.phase || !m.phase || m.phase === old.phase) &&
-      (!old.airflow_m3h || !m.airflow_m3h || m.airflow_m3h >= old.airflow_m3h * 0.85))
+      (!old.poles || !m.poles || m.poles === old.poles) &&
+      (!old.airflow_m3h || !m.airflow_m3h || m.airflow_m3h >= old.airflow_m3h))
     .map(m => {
       let score = 0;
       if (m.family === old.family) score += 4; else if (sameFamilyWord(m.family, old.family)) score += 2;
@@ -225,17 +251,87 @@ function productBrand(p) {
   return lead && knownBrands.has(lead) ? lead : brandKey(p.brand);
 }
 
+// Single-phase or three-phase, from whatever the plate or the typed text gave us.
+function parsePhase(fields) {
+  const t = [fields.phase, fields.voltage, fields.model, fields.notes].filter(Boolean).join(' ');
+  if (/\b(3|three)[\s-]*(ph|phase)|\b3~|\b400\s*v/i.test(t)) return 3;
+  if (/\b(1|single)[\s-]*(ph|phase)|\b1~|\b230\s*v/i.test(t)) return 1;
+  return null;
+}
+
+// Pole count sets how fast the fan turns, and therefore how much air it moves.
+// Two fans from the same range in the same duct size can differ fourfold on duty
+// with nothing but the pole count to tell them apart, so it is not decoration.
+function parsePoles(fields, elta) {
+  if (elta && elta.poles) return elta.poles;
+  const t = [fields.model, fields.part_number].filter(Boolean).join(' ');
+  const m = t.match(/\/(\d{1,2})-\d/) || t.match(/\b(\d)\s*pole/i);
+  const n = m ? parseInt(m[1]) : null;
+  return n && n >= 2 && n <= 12 ? n : null;
+}
+
+// The rules a replacement has to satisfy before it is worth putting in front of
+// someone. Each is checked only where we hold figures for both fans: a rule we
+// cannot check is reported as unverified rather than quietly treated as passed.
+// A rule we CAN check and that fails takes the product out of the running.
+function checkFit(criteria, p) {
+  const broken = [], unverified = [];
+
+  if (criteria.size_mm && p.size_mm) {
+    if (p.size_mm !== criteria.size_mm) broken.push('duct size ' + p.size_mm + 'mm, needs ' + criteria.size_mm + 'mm');
+  } else if (criteria.size_mm) unverified.push('duct size');
+
+  if (criteria.airflow_m3h && p.airflow_m3h) {
+    if (p.airflow_m3h < criteria.airflow_m3h) {
+      broken.push('moves ' + p.airflow_m3h + ' m³/h against ' + criteria.airflow_m3h + ' m³/h');
+    }
+  } else if (criteria.airflow_m3h) unverified.push('airflow');
+
+  if (criteria.phase && p.phase) {
+    if (p.phase !== criteria.phase) broken.push(p.phase === 3 ? 'three phase, needs single' : 'single phase, needs three');
+  } else if (criteria.phase) unverified.push('phase');
+
+  // Where duty cannot be compared directly, pole count stands in for it — but only
+  // as a veto on an obvious mismatch, never as a reason to prefer one fan.
+  if (!criteria.airflow_m3h || !p.airflow_m3h) {
+    if (criteria.poles && p.poles && p.poles !== criteria.poles) {
+      broken.push(p.poles + '-pole against ' + criteria.poles + '-pole');
+    }
+  }
+  return { broken, unverified };
+}
+
 function getRecommendations(fields, elta) {
   if (!products.length) return { match_type: 'none', recommendations: [], message: "Product catalogue not loaded." };
 
   const criteria = {
-    size_mm: parseInt(fields.size_mm) || parseSizeMm(fields.model) || parseSizeMm(fields.airflow) || parseSizeMm(fields.notes) ||
+    // Elta's own record of the fan beats anything read off a plate or inferred
+    size_mm: (elta && elta.size_mm) || parseInt(fields.size_mm) || parseSizeMm(fields.model) ||
+             parseSizeMm(fields.airflow) || parseSizeMm(fields.notes) ||
              extractSizeFromModel(fields.model) || extractSizeFromModel(fields.part_number),
-    airflow_m3h: parseAirflow(fields.airflow) || parseFloat(fields.estimated_airflow_m3h) || null,
+    airflow_m3h: (elta && elta.airflow_m3h) || parseAirflow(fields.airflow) || parseFloat(fields.estimated_airflow_m3h) || null,
     motor_type: (elta && elta.motor_type) || parseMotorType(fields),
     type: identifiedType(fields, elta),
+    phase: (elta && elta.phase) || parsePhase(fields),
+    poles: parsePoles(fields, elta),
     brand: fields.manufacturer || null
   };
+  // If the fan being replaced is one we stock, our own record of it beats anything
+  // read off a plate or guessed — use it for every figure it can supply.
+  const ownKeys = [fields.model, fields.part_number].map(normModel).filter(k => k.length >= 4);
+  const original = ownKeys.length ? products.find(p => ownKeys.includes(normModel(p.sku))) : null;
+  if (original) {
+    if (original.airflow_m3h) criteria.airflow_m3h = original.airflow_m3h;
+    if (original.size_mm) criteria.size_mm = original.size_mm;
+    if (original.phase) criteria.phase = original.phase;
+    if (original.poles) criteria.poles = original.poles;
+  }
+
+  // An airflow figure the AI guessed is not a safe basis for rejecting stock. Only
+  // gate on duty where the number came from data we can stand behind.
+  const dutyIsSolid = !!(elta && elta.airflow_m3h) || !!(original && original.airflow_m3h) ||
+                      fields.spec_source === 'manufacturer page';
+  if (!dutyIsSolid) criteria.airflow_m3h = null;
 
   // === Cross-reference tag matching (Replaces_MODEL) — hand-curated, so shown as-is ===
   const identifiedModel = (fields.model || '').replace(/[\s-]/g, '').toUpperCase();
@@ -261,6 +357,12 @@ function getRecommendations(fields, elta) {
     }
   }
 
+  // If we never worked out what kind of fan this is, the type filter would switch
+  // itself off and start offering box fans against roof fans. Take the type from
+  // our own record of the fan where we have one, and otherwise decline rather than
+  // return a list nothing is filtering.
+  if (!criteria.type && original) criteria.type = productType(original);
+
   const inStock = products.filter(p => p.in_stock);
   const sameType = p => !criteria.type || productType(p) === criteria.type;
   const list = [];
@@ -284,6 +386,7 @@ function getRecommendations(fields, elta) {
     for (const eq of eltaEquivalents(elta)) {
       const p = inStock.find(p => normModel(p.sku) === eq.key);
       if (!p || listed(p) || !sameType(p)) continue;
+      if (checkFit(criteria, p).broken.length) continue; // a "direct replacement" has to fit too
       list.push({ ...p, match_type: 'elta_equivalent', highlight: list.length === 0 ? 'Direct replacement' : null,
         match_reason: 'Current Elta equivalent of ' + elta.model +
           (eq.airflow_m3h && elta.airflow_m3h ? ' — ' + eq.airflow_m3h + ' m³/h vs ' + elta.airflow_m3h + ' m³/h' : '') });
@@ -296,55 +399,60 @@ function getRecommendations(fields, elta) {
   // If we never worked out a size, same-type fans are still better than nothing.
   const typeOnly = !criteria.size_mm && !!criteria.type && !list.length;
   const wantBrand = brandKey(criteria.brand);
-  if (criteria.size_mm || typeOnly) {
+  if (criteria.type && (criteria.size_mm || typeOnly)) {
     const loose = [fields.model, fields.part_number].map(s => (s || '').toLowerCase().replace(/[\s-]/g, '')).filter(s => s.length >= 4);
-    const scored = inStock.filter(p => !listed(p) && sameType(p)).map(p => {
+    // Anything that breaks one of the four rules is out, whatever else it has going
+    // for it. Scoring only ever decides the order of fans that already fit — it can
+    // no longer promote an undersized or underpowered one on the strength of a
+    // matching duct and motor.
+    const eligible = inStock.filter(p => !listed(p) && sameType(p))
+      .map(p => ({ p, fit: checkFit(criteria, p) }))
+      .filter(x => x.fit.broken.length === 0);
+
+    const scored = eligible.map(({ p, fit }) => {
       let score = typeOnly ? 50 : 0;
       const reasons = [];
       const pSku = p.sku.toLowerCase().replace(/[\s-]/g, ''), pName = p.name.toLowerCase().replace(/[\s-]/g, '');
       if (loose.some(m => pSku.includes(m) || pName.includes(m) || m.includes(pSku))) { score += 40; reasons.push('Same model family'); }
       if (criteria.size_mm && p.size_mm === criteria.size_mm) { score += 50; reasons.push('Same size'); }
-      else if (criteria.size_mm && p.size_mm && Math.abs(p.size_mm - criteria.size_mm) <= 25) { score += 20; reasons.push('Close size'); }
+      // A fan we have checked all the way through outranks one we could not.
+      score -= fit.unverified.length * 12;
       if (criteria.airflow_m3h && p.airflow_m3h) {
         const ratio = p.airflow_m3h / criteria.airflow_m3h;
         if (ratio >= 0.8 && ratio <= 1.2) { score += 30; reasons.push('Similar airflow'); }
         else if (ratio >= 0.6 && ratio <= 1.4) { score += 15; reasons.push('Comparable airflow'); }
       }
       if (criteria.motor_type && p.motor_type === criteria.motor_type) { score += 20; reasons.push('Same motor type'); }
-      if (elta && elta.phase && p.phase === elta.phase) { score += 10; reasons.push(elta.phase === 1 ? 'Single phase' : 'Three phase'); }
+      if (criteria.phase && p.phase === criteria.phase) { score += 10; reasons.push(criteria.phase === 1 ? 'Single phase' : 'Three phase'); }
       const sameBrand = !!wantBrand && productBrand(p) === wantBrand;
       if (sameBrand) { score += 10; reasons.push('Same brand'); }
       if (criteria.type) reasons.unshift(criteria.type);
-      // Duct size is a hard constraint — brand is a preference. Fans that physically
-      // fit rank above ones that don't, and within each group the customer's own
-      // brand comes first, then alternatives.
-      const fit = !criteria.size_mm || p.size_mm === criteria.size_mm ? 0
-        : (p.size_mm && Math.abs(p.size_mm - criteria.size_mm) <= 25 ? 1 : 2);
-      return { ...p, match_score: score, match_reasons: reasons, _fit: fit, _same_brand: sameBrand };
+      return { ...p, match_score: score, match_reasons: reasons, _unverified: fit.unverified, _same_brand: sameBrand };
     })
-    .filter(p => p.match_score >= 50)
-    .sort((a, b) => a._fit - b._fit
-      || (b._same_brand === true) - (a._same_brand === true)
-      || b.match_score - a.match_score);
+    .filter(p => p.match_score >= 30)
+    // Everything here already fits, so the customer's own brand leads, then score.
+    .sort((a, b) => (b._same_brand === true) - (a._same_brand === true) || b.match_score - a.match_score);
 
     const seen = new Set(list.map(p => p.sku));
     for (const p of scored) {
       if (list.length >= 4) break;
       if (seen.has(p.sku)) continue; // the catalogue repeats a few SKUs
       seen.add(p.sku);
-      const { _same_brand, _fit, ...rest } = p;
-      list.push({ ...rest, match_type: 'similar', match_reason: p.match_reasons.join(' · ') });
+      const { _same_brand, _unverified, ...rest } = p;
+      list.push({ ...rest, match_type: 'similar', match_reason: p.match_reasons.join(' · '),
+        unverified: _unverified.length ? _unverified : null });
     }
     if (!matchType && list.length) matchType = 'similar';
   }
 
   if (!list.length) {
-    return {
-      match_type: 'none',
-      criteria,
-      recommendations: [],
-      message: "We couldn't find an automatic match, but don't worry — our team can help."
-    };
+    // Say which requirement nothing met, so "no match" reads as a considered answer
+    // rather than a shrug — and so the team picking it up knows where to start.
+    let message = "We couldn't find an automatic match, but don't worry — our team can help.";
+    if (!criteria.type) message = "We couldn't tell what type of fan this is from what you gave us. Send us a photo of the ID plate or the model number and we'll identify it.";
+    else if (criteria.airflow_m3h) message = "Nothing we stock in this duct size matches " + criteria.type.toLowerCase() +
+      " at " + criteria.airflow_m3h + " m³/h or above. Our team can source one — we'd rather say that than send you something undersized.";
+    return { match_type: 'none', criteria, recommendations: [], message };
   }
   return { match_type: matchType, criteria, recommendations: list };
 }
@@ -649,46 +757,6 @@ async function fanImage(fields, elta, recommendations) {
 // === Main Handler ===
 
 export default async function handler(req, res) {
-  // TEMPORARY diagnostic: GET ?diag=<model>&brand=<brand> shows where the spec
-  // lookup gives up. Remove once the manufacturer-page reader is proven.
-  if (req.method === 'GET' && req.query && req.query.diag) {
-    const brand = String(req.query.brand || 'Helios');
-    const model = String(req.query.diag);
-    const key = (process.env.BRAVE_SEARCH_API_KEY || '').trim();
-    const out = { brave_key_len: key.length, brand, model, model_key: normModel(model) };
-    if (!key) { out.stopped_at = 'no BRAVE_SEARCH_API_KEY in this environment'; return res.status(200).json(out); }
-    const hasBrand = slug(model).startsWith(slug(brand));
-    const q = (hasBrand ? model : [brand, model].filter(Boolean).join(' ')).trim();
-    out.query = q;
-    try {
-      const r = await fetch('https://api.search.brave.com/res/v1/web/search?count=10&q=' + encodeURIComponent(q),
-        { signal: AbortSignal.timeout(6000), headers: { 'Accept': 'application/json', 'X-Subscription-Token': key } });
-      out.brave_status = r.status;
-      const body = await r.text();
-      if (!r.ok) { out.brave_body = body.slice(0, 400); out.stopped_at = 'brave rejected the request'; return res.status(200).json(out); }
-      const d = JSON.parse(body);
-      out.results = ((d.web && d.web.results) || []).map(x => x.url).slice(0, 10);
-    } catch (e) { out.brave_error = String(e && e.message); out.stopped_at = 'brave call threw'; return res.status(200).json(out); }
-    out.pages = [];
-    for (const url of out.results.slice(0, 5)) {
-      const row = { url, own_domain: isOwnDomain(url, brand) };
-      try {
-        try { const probe = await fetchPage(url); row.http_status = probe.status; }
-        catch (e) { row.fetch_error = String(e && e.name) + ': ' + String(e && e.message); }
-        const html = await pageHtml(url);
-        row.fetched = !!html;
-        if (html) {
-          const flat = html.toUpperCase().replace(/[^A-Z0-9]/g, '');
-          row.model_literal = flat.includes(normModel(model));
-          row.tokens_ok = tokensOk(normModel(model), flat);
-          row.specs = await pageSpecs(url, brand, normModel(model));
-        }
-      } catch (e) { row.error = String(e && e.message); }
-      out.pages.push(row);
-    }
-    return res.status(200).json(out);
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }

@@ -481,6 +481,14 @@ body.appendChild(el('p', 'text-sm font-medium text-black', product.name));
 const specs = [product.size_mm ? product.size_mm + 'mm' : '', product.motor_type || '', product.airflow_m3h ? product.airflow_m3h + ' m³/h' : ''].filter(Boolean).join(' · ');
 if (specs) body.appendChild(el('p', 'text-xs text-gray-500 mt-1', specs));
 if (product.match_reason) body.appendChild(el('p', 'text-xs text-gray-400 mt-1', product.match_reason));
+// Every fan shown has passed the checks we could run. Where a figure was missing
+// we say which one rather than let silence read as a clean bill of health.
+if (Array.isArray(product.unverified) && product.unverified.length) {
+const words = { airflow: 'airflow', 'duct size': 'duct size', phase: 'phase' };
+const list = product.unverified.map(u => words[u] || u);
+const tail = list.length > 1 ? list.slice(0, -1).join(', ') + ' or ' + list[list.length - 1] : list[0];
+body.appendChild(el('p', 'text-xs text-amber-700 mt-1', 'We don’t hold the ' + tail + ' for this one — worth confirming before you order.'));
+}
 card.appendChild(body);
 const side = el('div', 'text-right flex-shrink-0');
 if (product.price_gbp) side.appendChild(el('p', 'text-lg text-black font-medium', '£' + product.price_gbp.toFixed(2)));
