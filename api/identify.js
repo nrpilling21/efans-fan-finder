@@ -329,6 +329,21 @@ function checkFit(criteria, p) {
 function getRecommendations(fields, elta) {
   if (!products.length) return { match_type: 'none', recommendations: [], message: "Product catalogue not loaded." };
 
+  // No model, no part number, no match in our own data: we have not identified a
+  // fan, we have looked at a photo. The prompt tells the AI to estimate missing
+  // specs, and it obliges even with nothing to go on — a photo of a grimy roof
+  // fan with no legible plate came back "plate axial, 315mm, 2500 m3/h" and drew
+  // four confident recommendations. A recommendation has to be anchored to a fan
+  // we actually identified, not to a guess about a picture.
+  if (!fields.model && !fields.part_number && !elta) {
+    return {
+      match_type: 'none', recommendations: [],
+      criteria: { size_mm: null, airflow_m3h: null, motor_type: null, type: null, phase: null, poles: null, brand: fields.manufacturer || null },
+      message: 'We couldn\u2019t read a model number from that photo, so anything we suggested would be a guess. ' +
+        'The plate is usually on the motor housing or inside the terminal box \u2014 send us that and we\u2019ll identify it properly.'
+    };
+  }
+
   const criteria = {
     // Elta's own record of the fan beats anything read off a plate or inferred
     size_mm: (elta && elta.size_mm) || parseInt(fields.size_mm) || parseSizeMm(fields.model) ||
