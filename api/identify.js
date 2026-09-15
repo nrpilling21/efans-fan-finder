@@ -271,8 +271,10 @@ function productBrand(p) {
 // either. Only the explicit phase notation counts.
 function parsePhase(fields) {
   const t = [fields.phase, fields.voltage, fields.model, fields.notes].filter(Boolean).join(' ');
-  if (/\b3\s*~|\b3\s*-?\s*(ph\b|phase)|three[\s-]*phase/i.test(t)) return 3;
-  if (/\b1\s*~|\b1\s*-?\s*(ph\b|phase)|single[\s-]*phase/i.test(t)) return 1;
+  // Plates write it both ways round: "3 PH" and "PH 3" are both common, and Roof
+  // Units print "PH 1" against a 230V supply. Read the number on either side.
+  if (/\b3\s*~|\b3\s*-?\s*(ph\b|phase)|(ph\b|phase)\s*:?\s*3\b|three[\s-]*phase/i.test(t)) return 3;
+  if (/\b1\s*~|\b1\s*-?\s*(ph\b|phase)|(ph\b|phase)\s*:?\s*1\b|single[\s-]*phase/i.test(t)) return 1;
   // A lone tilde against the voltage is the IEC mark for single-phase AC
   // ("230V~", "V~: 230"); a three-phase plate writes 3~ and is caught above.
   if (/\d\s*V\s*~|\bV\s*~\s*:?\s*\d/i.test(t)) return 1;
