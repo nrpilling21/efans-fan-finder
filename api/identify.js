@@ -429,12 +429,21 @@ function tokensOk(modelKey, flat) {
 }
 
 // Fetch a page once; both the photo and the spec reader work from the same copy
+// Manufacturer sites routinely refuse an obviously-automated request — a bare
+// tool User-Agent gets a 403 from the very pages we most need. Ask the way a
+// browser would, and allow longer: these are slow corporate sites, not APIs.
+const PAGE_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-GB,en;q=0.9,de;q=0.8'
+};
+async function fetchPage(url) {
+  const r = await fetch(url, { signal: AbortSignal.timeout(9000), redirect: 'follow', headers: PAGE_HEADERS });
+  return { status: r.status, html: r.ok ? (await r.text()).slice(0, 400000) : null };
+}
 function pageHtml(url) {
   return cached('page:' + url, async () => {
-    const r = await fetch(url, { signal: AbortSignal.timeout(4000),
-      headers: { 'User-Agent': 'eFans-Fan-Finder/1.0' } });
-    if (!r.ok) return null;
-    return (await r.text()).slice(0, 400000);
+    try { return (await fetchPage(url)).html; } catch (e) { return null; }
   });
 }
 
@@ -610,6 +619,8 @@ export default async function handler(req, res) {
     for (const url of out.results.slice(0, 5)) {
       const row = { url, own_domain: isOwnDomain(url, brand) };
       try {
+        try { const probe = await fetchPage(url); row.http_status = probe.status; }
+        catch (e) { row.fetch_error = String(e && e.name) + ': ' + String(e && e.message); }
         const html = await pageHtml(url);
         row.fetched = !!html;
         if (html) {
