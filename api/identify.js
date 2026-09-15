@@ -273,6 +273,9 @@ function parsePhase(fields) {
   const t = [fields.phase, fields.voltage, fields.model, fields.notes].filter(Boolean).join(' ');
   if (/\b3\s*~|\b3\s*-?\s*(ph\b|phase)|three[\s-]*phase/i.test(t)) return 3;
   if (/\b1\s*~|\b1\s*-?\s*(ph\b|phase)|single[\s-]*phase/i.test(t)) return 1;
+  // A lone tilde against the voltage is the IEC mark for single-phase AC
+  // ("230V~", "V~: 230"); a three-phase plate writes 3~ and is caught above.
+  if (/\d\s*V\s*~|\bV\s*~\s*:?\s*\d/i.test(t)) return 1;
   // A run capacitor is only ever fitted to a single-phase induction motor, so a
   // capacitance on the plate settles it where the notation is missing.
   if (/\d+([.,]\d+)?\s*[µu]F\b|\bcapacit|\bcap\s*\d/i.test(t)) return 1;
@@ -382,6 +385,23 @@ function getRecommendations(fields, elta) {
   // our own record of the fan where we have one, and otherwise decline rather than
   // return a list nothing is filtering.
   if (!criteria.type && original) criteria.type = productType(original);
+
+  // Whole-house heat recovery is a system, not a fan you swap out, and the units
+  // run to four figures. Offering one on the strength of a type the AI inferred
+  // from a plate is too big a leap: a 48W S&P OZEO extract fan read as "MVHR"
+  // produced four Vent-Axia MVHR units at £922-£1,049. So for these categories we
+  // want the type corroborated by Elta's data or by our own record of the fan,
+  // and otherwise we say so and hand it to a person.
+  const BIG_INSTALL = ['Whole House', 'Single Room', 'PIV'];
+  const typeCorroborated = !!(elta || original);
+  if (BIG_INSTALL.includes(criteria.type) && !typeCorroborated) {
+    return {
+      match_type: 'none', criteria, recommendations: [],
+      message: 'This looks like a heat recovery or whole-house unit rather than a single fan. ' +
+        'Those are specified around the property, not swapped like for like, so we won\u2019t suggest one ' +
+        'automatically \u2014 our team will work out what you actually need.'
+    };
+  }
 
   const inStock = products.filter(p => p.in_stock);
   const sameType = p => !criteria.type || productType(p) === criteria.type;
