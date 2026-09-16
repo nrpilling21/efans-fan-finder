@@ -114,7 +114,8 @@ function eltaEquivalents(old) {
     .filter(m => m.current && m.key !== old.key && m.category === old.category &&
       m.size_mm === old.size_mm && (!old.phase || !m.phase || m.phase === old.phase) &&
       (!old.poles || !m.poles || m.poles === old.poles) &&
-      (!old.airflow_m3h || !m.airflow_m3h || m.airflow_m3h >= old.airflow_m3h))
+      (!old.airflow_m3h || !m.airflow_m3h ||
+        (m.airflow_m3h >= old.airflow_m3h * RULES.dutyMin && m.airflow_m3h <= old.airflow_m3h * RULES.dutyMax)))
     .map(m => {
       let score = 0;
       if (m.family === old.family) score += 4; else if (sameFamilyWord(m.family, old.family)) score += 2;
@@ -321,6 +322,18 @@ function parsePoles(fields, elta) {
   return n && n >= 2 && n <= 12 ? n : null;
 }
 
+// === The rules a replacement has to satisfy ===
+// Kept together and named so they can be argued about and changed in one place
+// rather than found scattered through the scoring.
+const RULES = {
+  // Duty: a replacement must at least match the fan coming out, and must not be
+  // wildly oversized either. An SPD450/6-3 moves 1576 m³/h; without a ceiling the
+  // tool offered fans up to 7131 — four and a half times the duty, which is the
+  // wrong noise, the wrong money, and over-ventilating the space.
+  dutyMin: 1.0,
+  dutyMax: 2.0
+};
+
 // The rules a replacement has to satisfy before it is worth putting in front of
 // someone. Each is checked only where we hold figures for both fans: a rule we
 // cannot check is reported as unverified rather than quietly treated as passed.
@@ -333,8 +346,10 @@ function checkFit(criteria, p) {
   } else if (criteria.size_mm) unverified.push('duct size');
 
   if (criteria.airflow_m3h && p.airflow_m3h) {
-    if (p.airflow_m3h < criteria.airflow_m3h) {
+    if (p.airflow_m3h < criteria.airflow_m3h * RULES.dutyMin) {
       broken.push('moves ' + p.airflow_m3h + ' m³/h against ' + criteria.airflow_m3h + ' m³/h');
+    } else if (p.airflow_m3h > criteria.airflow_m3h * RULES.dutyMax) {
+      broken.push('moves ' + p.airflow_m3h + ' m³/h, more than double the ' + criteria.airflow_m3h + ' m³/h needed');
     }
   } else if (criteria.airflow_m3h) unverified.push('airflow');
 
