@@ -444,9 +444,10 @@ exact: ['Exact match', 'We stock this fan', 'We have your exact model, plus alte
 elta_equivalent: ['Superseded model', 'Current Elta equivalent', 'Your fan has been superseded. This is the current model that replaces it:'],
 cross_reference: ['Verified', 'Verified replacement', 'We stock a confirmed replacement for your fan:'],
 shopify: ['On efans.co.uk', 'Products found on eFans', 'We found these related products on our website:'],
-similar: ['Recommended', n => n + ' alternative replacement' + (n === 1 ? '' : 's') + ' found', 'Same type and size \u2014 your own brand first, then the closest alternatives:']
+similar: ['Recommended', n => n + ' alternative replacement' + (n === 1 ? '' : 's') + ' found', 'Same type and size \u2014 your own brand first, then the closest alternatives:'],
+orderable: ['We can supply', n => n === 1 ? 'We can order this in' : 'We can order these in', 'Not on the shelf, but Elta still make these and we can get them for you:']
 };
-const CARD_CHIP = { exact: 'Exact match', elta_equivalent: 'Current equivalent', cross_reference: 'Verified replacement', shopify: 'Website match', similar: 'Same type' };
+const CARD_CHIP = { exact: 'Exact match', elta_equivalent: 'Current equivalent', cross_reference: 'Verified replacement', shopify: 'Website match', similar: 'Same type', orderable: 'Made to order' };
 function showRecommendations(recData) {
 recommendations.classList.remove('hidden');
 recsFound.classList.add('hidden');
@@ -475,7 +476,12 @@ const hl = product.highlight;
 const card = el('a', hl
 ? 'group flex items-start gap-4 p-4 my-4 border-2 border-black bg-white hover:bg-gray-50 transition-colors'
 : 'group flex items-start gap-4 py-5 border-b border-gray-200 hover:bg-gray-50 transition-colors');
+if (product.supply_only) {
+// Nothing to click through to: we don't list it, so the next step is a person
+card.href = 'mailto:hello@efans.co.uk?subject=' + encodeURIComponent('Fan enquiry: ' + product.sku);
+} else {
 card.href = product.url; card.target = '_blank'; card.rel = 'noopener';
+}
 if (product.image) {
 const img = el('img', 'w-20 h-20 object-contain bg-panel flex-shrink-0');
 img.src = product.image; img.alt = '';
@@ -500,9 +506,15 @@ body.appendChild(el('p', 'text-xs text-amber-700 mt-1', 'We don’t hold the ' +
 }
 card.appendChild(body);
 const side = el('div', 'text-right flex-shrink-0');
+if (product.supply_only) {
+side.appendChild(el('p', 'text-sm text-black font-medium', 'Contact us'));
+side.appendChild(el('p', 'text-xs text-gray-500', 'for price'));
+side.appendChild(el('p', 'text-xs text-black mt-2 group-hover:underline', 'Enquire →'));
+} else {
 if (product.price_gbp) side.appendChild(el('p', 'text-lg text-black font-medium', '£' + product.price_gbp.toFixed(2)));
 side.appendChild(el('p', 'text-xs text-green-700', 'In stock'));
 side.appendChild(el('p', 'text-xs text-black mt-2 group-hover:underline', 'View →'));
+}
 card.appendChild(side);
 recsContent.appendChild(card);
 });

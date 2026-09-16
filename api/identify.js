@@ -540,6 +540,32 @@ function getRecommendations(fields, elta) {
   // be established, say so once rather than let silence imply we checked.
   const dutyUnconfirmed = !criteria.airflow_m3h && list.some(p => p.match_type === 'similar');
 
+  // Elta still build 655 current models we don't hold on the shelf, and their own
+  // data says which of them fit. Showing nothing for a fan Elta are still making
+  // — in several cases the very same model — turns an order we could place
+  // tomorrow into a dead end. These come after anything in stock and carry no
+  // price: they are quoted, not bought off the page.
+  if (elta && !isSpecialist(elta) && list.length < 4) {
+    const offer = (m, why) => {
+      if (list.length >= 4) return;
+      if (list.some(x => normModel(x.sku) === m.key)) return;
+      if (inStock.some(x => normModel(x.sku) === m.key)) return;
+      list.push({
+        sku: m.model, name: 'Elta ' + m.model + (m.range ? ' \u2014 ' + m.range : ''),
+        brand: 'Elta', category: m.category, size_mm: m.size_mm, airflow_m3h: m.airflow_m3h,
+        phase: m.phase, motor_type: m.motor_type, url: m.url || null,
+        price_gbp: null, in_stock: false, supply_only: true, match_type: 'orderable',
+        highlight: list.length === 0 ? 'We can supply this' : null,
+        match_reason: why + (m.airflow_m3h && elta.airflow_m3h
+          ? ' \u2014 ' + m.airflow_m3h + ' m\u00b3/h vs ' + elta.airflow_m3h + ' m\u00b3/h' : '')
+      });
+    };
+    // The fan itself, where Elta still make it and we simply don't stock it
+    if (elta.current) offer(elta, 'The same model \u2014 Elta still make it');
+    for (const eq of eltaEquivalents(elta)) offer(eq, 'Current Elta equivalent');
+    if (!matchType && list.length) matchType = 'orderable';
+  }
+
   if (!list.length) {
     // Say which requirement nothing met, so "no match" reads as a considered answer
     // rather than a shrug — and so the team picking it up knows where to start.
