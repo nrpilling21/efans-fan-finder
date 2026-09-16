@@ -69,6 +69,38 @@ try {
 } catch (e) {
   console.warn('Could not load model codes:', e.message);
 }
+// Fans our suppliers make that we don't stock, transcribed from their own
+// selection tools with the source and date recorded per batch. Specialist kit —
+// smoke-rated, ATEX — is stripped out here at load: a certification is a
+// requirement in its own right, and duty and diameter cannot stand in for it.
+let supplierRange = [];
+try {
+  const sr = JSON.parse(readFileSync(join(process.cwd(), 'data', 'supplier_range.json'), 'utf8'));
+  supplierRange = (sr.models || []).filter(m => !m.specialist && m.airflow_m3h && m.size_mm && m.type);
+} catch (e) {
+  console.warn('Could not load supplier range:', e.message);
+}
+
+// Held to exactly the four gates the stocked catalogue is held to. Duty has to
+// be known: without it there is no window to test against, and nothing in here
+// is corroborated by a record of our own the way a stocked fan is.
+// `category` on a product is the shop collection ("Axial Fan", "Duct Fans"), a
+// coarser thing than the Type_ tag the matcher gates on. Put the right one on
+// the card so a supplier fan sits in the same bucket as a stocked one.
+const TYPE_COLLECTION = { 'Cased Axial': 'Axial Fan', 'Plate Axial': 'Axial Fan', 'Box Fan': 'Axial Fan',
+                          'Duct Fan': 'Duct Fans', 'Roof Fan': 'Roof Fans', 'Centrifugal': 'Centrifugal' };
+
+function supplierEquivalents(criteria) {
+  if (!criteria.airflow_m3h || !criteria.size_mm || !criteria.type) return [];
+  return supplierRange
+    .filter(m => m.size_mm === criteria.size_mm)
+    .filter(m => m.type === criteria.type)
+    .filter(m => !criteria.phase || !m.phase || m.phase === criteria.phase)
+    .filter(m => m.airflow_m3h >= criteria.airflow_m3h * RULES.dutyMin &&
+                 m.airflow_m3h <= criteria.airflow_m3h * RULES.dutyMax)
+    .sort((a, b) => a.airflow_m3h - b.airflow_m3h);
+}
+
 function codeLookup(fields) {
   const s = [fields && fields.model, fields && fields.part_number].filter(Boolean).join(' ');
   if (!s) return null;
@@ -578,6 +610,28 @@ function getRecommendations(fields, elta) {
     // The fan itself, where Elta still make it and we simply don't stock it
     if (elta.current) offer(elta, 'The same model \u2014 Elta still make it');
     for (const eq of eltaEquivalents(elta)) offer(eq, 'Current Elta equivalent');
+    if (!matchType && list.length) matchType = 'orderable';
+  }
+
+  // Same tier, other makes. Elta's data only covers Elta; where the fan on the
+  // wall is somebody else's — or Elta have nothing in that size — a supplier's
+  // own range often does. Quoted, not bought off the page, like the rest of this tier.
+  if (!isSpecialist(elta) && list.length < 4) {
+    for (const m of supplierEquivalents(criteria)) {
+      if (list.length >= 4) break;
+      const key = normModel(m.model);
+      if (list.some(x => normModel(x.sku) === key)) continue;
+      if (inStock.some(x => normModel(x.sku) === key)) continue;
+      list.push({
+        sku: m.model, name: m.brand + ' ' + m.model,
+        brand: m.brand, category: TYPE_COLLECTION[m.type] || null, size_mm: m.size_mm, airflow_m3h: m.airflow_m3h,
+        phase: m.phase, motor_type: null, url: null,
+        price_gbp: null, in_stock: false, supply_only: true, match_type: 'orderable',
+        highlight: list.length === 0 ? 'We can supply this' : null,
+        match_reason: 'We can order this from ' + m.brand + ' \u2014 ' +
+          m.airflow_m3h + ' m\u00b3/h vs ' + criteria.airflow_m3h + ' m\u00b3/h'
+      });
+    }
     if (!matchType && list.length) matchType = 'orderable';
   }
 
