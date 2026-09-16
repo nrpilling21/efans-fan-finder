@@ -1,0 +1,194 @@
+{
+ "AW": {
+  "brand": "Systemair",
+  "type": "Plate Axial"
+ },
+ "ACM": {
+  "brand": "Vent-Axia",
+  "type": "Duct Fan"
+ },
+ "AR": {
+  "brand": "Systemair",
+  "type": "Cased Axial"
+ },
+ "HR": {
+  "brand": "Elta",
+  "type": "Single Room"
+ },
+ "KVK": {
+  "brand": "Systemair",
+  "type": "Box Fan"
+ },
+ "DHS": {
+  "brand": "Systemair",
+  "type": "Roof Fan"
+ },
+ "TX": {
+  "brand": "Vent-Axia",
+  "type": "Axial Fan"
+ },
+ "RVK": {
+  "brand": "Systemair",
+  "type": "Duct Fan"
+ },
+ "MUB": {
+  "brand": "Systemair",
+  "type": "Axial Fan"
+ },
+ "MF": {
+  "brand": "Manrose",
+  "type": "Duct Fan"
+ },
+ "IE": {
+  "brand": "Systemair",
+  "type": "Axial Fan"
+ },
+ "SCP": {
+  "brand": "Elta",
+  "type": "Plate Axial"
+ },
+ "HCBB": {
+  "brand": "S&P",
+  "type": "Plate Axial"
+ },
+ "HCBT": {
+  "brand": "S&P",
+  "type": "Plate Axial"
+ },
+ "HXBR": {
+  "brand": "S&P",
+  "type": "Plate Axial"
+ },
+ "TCBBX": {
+  "brand": "S&P",
+  "type": "Cased Axial"
+ },
+ "TCBTX": {
+  "brand": "S&P",
+  "type": "Cased Axial"
+ },
+ "TD": {
+  "brand": "S&P",
+  "type": "Duct Fan"
+ },
+ "XP": {
+  "brand": "Systemair",
+  "type": "Duct Fan"
+ },
+ "SPA": {
+  "brand": "Elta",
+  "type": "Plate Axial"
+ },
+ "SLC": {
+  "brand": "Elta",
+  "type": "Cased Axial"
+ },
+ "TF": {
+  "brand": "Elta",
+  "type": "Cased Axial"
+ },
+ "VL": {
+  "brand": "Elta",
+  "type": "Duct Fan"
+ },
+ "SMB": {
+  "brand": "Elta",
+  "type": "Duct Fan"
+ },
+ "CF": {
+  "brand": "Elta",
+  "type": "Roof Fan"
+ },
+ "CFHT": {
+  "brand": "Elta",
+  "type": "Roof Fan"
+ },
+ "SCD": {
+  "brand": "Elta",
+  "type": "Cased Axial"
+ },
+ "ESP": {
+  "brand": "Vent-Axia",
+  "type": "Plate Axial"
+ },
+ "ESR": {
+  "brand": "Vent-Axia",
+  "type": "Roof Fan"
+ },
+ "QP": {
+  "brand": "Vent-Axia",
+  "type": "Box Fan"
+ },
+ "SLP": {
+  "brand": "Vent-Axia",
+  "type": "Box Fan"
+ },
+ "HIT": {
+  "brand": "Hydor",
+  "type": "Duct Fan"
+ },
+ "FLUXHR": {
+  "brand": "Elta",
+  "type": "Single Room"
+ },
+ "CA": {
+  "brand": "Zehnder",
+  "type": "Whole House"
+ },
+ "TCBB": {
+  "brand": "S&P",
+  "type": "Cased Axial"
+ },
+ "JETLINE": {
+  "brand": "S&P",
+  "type": "Duct Fan"
+ },
+ "CRHT": {
+  "brand": "S&P",
+  "type": "Roof Fan"
+ },
+ "TCBT": {
+  "brand": "S&P",
+  "type": "Cased Axial"
+ },
+ "VENT": {
+  "brand": "S&P",
+  "type": "Duct Fan"
+ },
+ "TH": {
+  "brand": "S&P",
+  "type": "Roof Fan"
+ },
+ "CRHB": {
+  "brand": "S&P",
+  "type": "Roof Fan"
+ },
+ "CRVB": {
+  "brand": "S&P",
+  "type": "Roof Fan"
+ },
+ "SSDL": {
+  "brand": "Elta",
+  "type": "Box Fan"
+ },
+ "RRK": {
+  "brand": "Helios",
+  "type": "Duct Fan"
+ },
+ "EFU": {
+  "brand": "Roof Units",
+  "type": "Roof Fan"
+ },
+ "VVX": {
+  "brand": "Villavent",
+  "type": "Whole House"
+ },
+ "D2E": {
+  "brand": "ebm-papst",
+  "type": "Centrifugal"
+ },
+ "OZEO": {
+  "brand": "S&P",
+  "type": "Bathroom"
+ }
+}

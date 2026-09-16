@@ -54,6 +54,30 @@ for (const p of products) {
   }
 }
 
+// === What a model code tells us on its own (scripts/build_model_codes.mjs) ===
+// The AI reads a plate well but classifies from general knowledge, and on trade
+// codes it guesses: an S&P HXBR came back "cased axial" when it is a plate axial,
+// a TCBBX2 came back "box fan" when it is a cased axial, and an ebm-papst D2E146
+// came back "plate axial" when it is a centrifugal. The catalogue answers all
+// three unambiguously, so ask it instead.
+let modelCodes = {};
+let modelCodeKeys = [];
+try {
+  modelCodes = JSON.parse(readFileSync(join(process.cwd(), 'data', 'model_codes.json'), 'utf8'));
+  // longest first, so TCBBX wins over TCBB
+  modelCodeKeys = Object.keys(modelCodes).sort((a, b) => b.length - a.length);
+} catch (e) {
+  console.warn('Could not load model codes:', e.message);
+}
+function codeLookup(fields) {
+  const s = [fields && fields.model, fields && fields.part_number].filter(Boolean).join(' ');
+  if (!s) return null;
+  for (const k of modelCodeKeys) {
+    if (new RegExp('\\b' + k + '[ \\-/]?\\d', 'i').test(s)) return { code: k, ...modelCodes[k] };
+  }
+  return null;
+}
+
 // Find the Elta model a plate reading refers to. Exact code match first, then a
 // unique prefix match (plates often drop or add a suffix, e.g. "SCP250/4-1").
 function findEltaModel(fields) {
@@ -224,8 +248,9 @@ function isSpecialist(elta) {
 }
 
 function identifiedType(fields, elta) {
+  if (elta && isSpecialist(elta)) return null;
+  const code = codeLookup(fields);
   if (elta) {
-    if (isSpecialist(elta)) return null;
     const f = elta.family || '';
     if (/roof/i.test(f)) return 'Roof Fan';
     if (/plate/i.test(f)) return 'Plate Axial';
@@ -236,8 +261,9 @@ function identifiedType(fields, elta) {
     if (/supply & extract/i.test(f)) return 'Single Room';
     if (/piv/i.test(f)) return 'PIV';
     if (/wall fan|residential axial/i.test(f)) return 'Axial Fan';
-    return null;
+    return code ? code.type : null;
   }
+  if (code) return code.type;
   const ft = String(fields.fan_type || '').toLowerCase();
   if (/plate/.test(ft)) return 'Plate Axial';
   if (/cased|duct axial/.test(ft)) return 'Cased Axial';
@@ -343,6 +369,11 @@ function getRecommendations(fields, elta) {
         'The plate is usually on the motor housing or inside the terminal box \u2014 send us that and we\u2019ll identify it properly.'
     };
   }
+
+  // A model code names its maker. The AI attributed an S&P TCBB/4-400 to Vortice;
+  // the code says S&P and the code is not guessing.
+  const codeHit = codeLookup(fields);
+  if (codeHit && codeHit.brand) fields.manufacturer = codeHit.brand;
 
   const criteria = {
     // Elta's own record of the fan beats anything read off a plate or inferred
@@ -502,6 +533,13 @@ function getRecommendations(fields, elta) {
     if (!matchType && list.length) matchType = 'similar';
   }
 
+  // Correcting the fan type opened a gap worth naming. An S&P TCBBX2/4-560 is a
+  // contra-rotating axial at 2.97kW; now that it types correctly we offer 560mm
+  // axials against it, but we hold no duty figure for the fan coming out, so
+  // nothing checked whether they keep up. Where the original's airflow could not
+  // be established, say so once rather than let silence imply we checked.
+  const dutyUnconfirmed = !criteria.airflow_m3h && list.some(p => p.match_type === 'similar');
+
   if (!list.length) {
     // Say which requirement nothing met, so "no match" reads as a considered answer
     // rather than a shrug — and so the team picking it up knows where to start.
@@ -530,7 +568,7 @@ function getRecommendations(fields, elta) {
     }
     return { match_type: 'none', criteria, recommendations: [], message };
   }
-  return { match_type: matchType, criteria, recommendations: list };
+  return { match_type: matchType, criteria, recommendations: list, duty_unconfirmed: dutyUnconfirmed };
 }
 
 async function searchShopify(fields) {

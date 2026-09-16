@@ -467,7 +467,9 @@ const copy = MATCH_COPY[recData.match_type] || MATCH_COPY.similar;
 recsEyebrow.textContent = copy[0];
 // a title may be a function of how many we found ("3 alternative replacements found")
 recsTitle.textContent = typeof copy[1] === 'function' ? copy[1](recData.recommendations.length) : copy[1];
-recsSubtitle.textContent = copy[2];
+recsSubtitle.textContent = copy[2] + (recData.duty_unconfirmed
+? ' We couldn\u2019t confirm what your existing fan moves, so check the duty before ordering.'
+: '');
 recData.recommendations.forEach(product => {
 const hl = product.highlight;
 const card = el('a', hl
